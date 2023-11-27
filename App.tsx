@@ -8,6 +8,8 @@
 import React from 'react';
 import type {PropsWithChildren} from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -16,6 +18,8 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 
 import {
   Colors,
@@ -24,6 +28,8 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import { HomeNavigation } from './src/navigation/Home';
+import { flexChild } from './src/styles';
 
 export const  App = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -33,22 +39,16 @@ export const  App = () => {
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
+    <SafeAreaProvider>
       <StatusBar
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundStyle.backgroundColor}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={flexChild}>
+          <HomeNavigation />
+      </KeyboardAvoidingView>
+    </SafeAreaProvider>
   );
 }
