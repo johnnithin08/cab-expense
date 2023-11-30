@@ -2,6 +2,7 @@ import React, { Fragment } from 'react';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
+import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import Fontisto from 'react-native-vector-icons/Fontisto';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
@@ -21,6 +22,7 @@ export const Icons = {
   Feather,
   FontAwesome,
   FontAwesome5,
+  FontAwesome6,
   Fontisto,
   AntDesign,
   Entypo,
