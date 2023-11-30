@@ -1,2 +1,3 @@
 export * from "./Dashboard"
-export * from "./Expenses"
+export * from "./Transactions"
+export * from "./NewTransaction"

@@ -4,9 +4,10 @@ import { BottomTabBarButtonProps, createBottomTabNavigator } from '@react-naviga
 import { NavigationContainer } from '@react-navigation/native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated"
 
-import { Dashboard, Expenses } from '../pages';
-import { absolutePosition, colorBlack, colorGreen, colorWhite, flexChild, flexColCC } from '../styles';
+import { Dashboard } from '../pages';
+import { absolutePosition, colorBlack, colorBlue, colorGray, colorGreen, colorWhite, flexChild, flexColCC } from '../styles';
 import { Icon, Icons } from '../components/Icon';
+import { TransactionStack } from './TransactionStack';
 
 
 const { Navigator, Screen} = createBottomTabNavigator();
@@ -20,14 +21,14 @@ export const HomeNavigation = () => {
         {
           name: "Movies",
           component: Dashboard,
-          type: Icons.Fontisto,
-          iconName: "film",
+          type: Icons.AntDesign,
+          iconName: "dashboard",
         },
         {
           name: "TV",
-          component: Expenses,
-          type: Icons.Feather,
-          iconName: "tv",
+          component: TransactionStack,
+          type: Icons.FontAwesome6,
+          iconName: "money-bill-transfer",
         },
       ]
 
@@ -65,7 +66,7 @@ export const HomeNavigation = () => {
           <Pressable onPress={onPress} style={{ ...flexChild, ...flexColCC }}>
             <Animated.View style={animatedStyle}>
     
-              <Icon type={item.type} name={item.iconName} color={focused ? colorGreen._1 : colorBlack._1} />
+              <Icon type={item.type} name={item.iconName} color={focused ? colorBlue._1 : colorGray._4} />
             </Animated.View>
           </Pressable>
         )
