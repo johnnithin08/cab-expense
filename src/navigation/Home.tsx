@@ -8,6 +8,7 @@ import { Dashboard } from '../pages';
 import { absolutePosition, colorBlack, colorBlue, colorGray, colorGreen, colorWhite, flexChild, flexColCC } from '../styles';
 import { Icon, Icons } from '../components/Icon';
 import { TransactionStack } from './TransactionStack';
+import { Profile } from '../pages/Profile';
 
 
 const { Navigator, Screen} = createBottomTabNavigator();
@@ -19,16 +20,22 @@ export const HomeNavigation = () => {
 
     const tabsArray = [
         {
-          name: "Movies",
+          name: "Dashboard",
           component: Dashboard,
           type: Icons.AntDesign,
           iconName: "dashboard",
         },
         {
-          name: "TV",
+          name: "Transactions",
           component: TransactionStack,
           type: Icons.FontAwesome6,
           iconName: "money-bill-transfer",
+        },
+        {
+          name: "Profile",
+          component: Profile,
+          type: Icons.MaterialCommunityIcons,
+          iconName: "account",
         },
       ]
 
