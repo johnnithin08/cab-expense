@@ -54,7 +54,7 @@ export const  App = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={flexChild}>
         <Authenticator.Provider>
-          <Authenticator>
+          <Authenticator signUpAttributes={["name", "phone_number"]}>
               <HomeNavigation />
           </Authenticator>
         </Authenticator.Provider>

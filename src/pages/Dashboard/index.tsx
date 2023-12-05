@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { View, Text } from 'react-native'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { PieChart } from "react-native-gifted-charts";
+import {fetchUserAttributes} from "aws-amplify/auth"
 
 import { centerHV, centerHorizontal, centerVertical, colorGray, flexChild, flexRow, flexRowCC, fs14BoldBlack2, fs16BoldBlack2, fs20BoldBlack2, fs24BoldBlack2, px, spaceBetweenVertical } from '../../styles'
 import { CustomSpacer, SingleSelectPills } from '../../components'
@@ -55,21 +56,28 @@ const renderLegendComponent = () => {
 
 export const Dashboard = () => {
   const [dateFilter, setDateFilter] = useState<TDateFilter>("Last month")
-
+  
   const handleDateFilter = (value: string) => {
     setDateFilter(value as TDateFilter)
   }
   const pieData = [
-  {
-    value: 47,
-    color: '#009FFF',
-    focused: true,
-  },
-  {value: 53, color: '#93FCF8',},
-];
+    {
+      value: 47,
+      color: '#009FFF',
+      focused: true,
+    },
+    {value: 53, color: '#93FCF8',},
+  ];
+  
+  const dataFilterArray: IPillsWithSubLabel[] = [{ label: "Last month" }, { label: "Last 6 months" }, { label: "Last Year" }]
+  
+  useEffect(() => {
+    const fetch = async () => {
+    console.log("auth", await fetchUserAttributes())
 
-const dataFilterArray: IPillsWithSubLabel[] = [{ label: "Last month" }, { label: "Last 6 months" }, { label: "Last Year" }]
-
+  }
+  fetch();
+})
 
 
 return (
