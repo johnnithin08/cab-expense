@@ -5,16 +5,10 @@
 export const getTransactions = /* GraphQL */ `
   query GetTransactions($id: ID!) {
     getTransactions(id: $id) {
-      id
-      type
       category
       name
       description
       amount
-      userID
-      createdAt
-      updatedAt
-      __typename
     }
   }
 `;
@@ -64,10 +58,7 @@ export const transactionsByUserID = /* GraphQL */ `
         name
         description
         amount
-        userID
         createdAt
-        updatedAt
-        __typename
       }
       nextToken
       __typename
@@ -77,29 +68,9 @@ export const transactionsByUserID = /* GraphQL */ `
 export const getUser = /* GraphQL */ `
   query GetUser($id: ID!) {
     getUser(id: $id) {
-      id
       name
       email
       phoneNo
-      transactions {
-        items {
-          id
-          type
-          category
-          name
-          description
-          amount
-          userID
-          createdAt
-          updatedAt
-          __typename
-        }
-        nextToken
-        __typename
-      }
-      createdAt
-      updatedAt
-      __typename
     }
   }
 `;
