@@ -1,15 +1,33 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { View, Text, SafeAreaView, FlatList, ViewStyle, ImageStyle, Image, Pressable } from 'react-native'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
+import { generateClient } from 'aws-amplify/api';
+import { getCurrentUser } from 'aws-amplify/auth';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import dayjs from 'dayjs';
 
 import { absolutePosition, border, colorBlack, colorWhite, flexChild, flexRow, fs12RegBlack2, fs14BoldBlack2, fs14RegBlack2, fs16BoldBlack2, fs18BoldBlack2, justifyContentEnd, px, py, spaceBetweenHorizontal, sw1 } from '../../styles'
 import { CustomFlexSpacer, CustomSpacer, Icon, Icons, TabGroup, TabProps } from '../../components';
 import { LabeledTitle } from '../../components/Views/LabeledTitle';
-import { useNavigation } from '@react-navigation/native';
+import { transactionsByUserID } from '../../graphql/queries';
+import { onCreateTransactions, onUpdateTransactions } from '../../graphql/subscriptions';
+
+interface ITrasnactions {
+    amount: string;
+    category: string;
+    createdAt: Date;
+    description: string;
+    id: string;
+    name: string;
+    type: string;
+}
 
 export const Transactions = () => {
+    const [transactions, setTransactions] = useState<ITrasnactions[]>([])
     const navigation = useNavigation()
     const [activeTab, setActiveTab] = useState<number>(0)
+    const client = generateClient();
+    const isFocused = useIsFocused()
 
     const tabs: TabProps[] = [{
       selected: activeTab === 0,
@@ -31,8 +49,35 @@ export const Transactions = () => {
     }
 
     const handleAdd = () => {
-        navigation.navigate("NewTransaction")
+        navigation.navigate("NewTransaction", { type: activeTab === 0 ? "Expense" : "Earning", mode: "new"})
     }
+
+    const fetchTransactions = async () => {
+        try 
+         {
+            const currentUser = await getCurrentUser();
+            const response = await client.graphql({
+                query: transactionsByUserID,
+                variables: { userID: currentUser.userId, filter: { type: { eq: activeTab === 0 ? "Expense" : "Earning"} }}
+              });
+            setTransactions(response.data.transactionsByUserID.items)
+            console.log("resps", response)
+         }
+        catch(err)
+         {
+            console.log("err", err)
+         }
+    }
+
+    useEffect(() => {
+        fetchTransactions();
+        const subscribeTransactions2 = client
+        .graphql({ query:  onCreateTransactions})
+        .subscribe({
+          next: ({ data }) => setTransactions([data.onCreateTransactions, ...transactions]),
+          error: (error) => console.warn(error)
+        });
+    },[activeTab, isFocused])
 
     const data = [
         {
@@ -87,21 +132,25 @@ export const Transactions = () => {
             <CustomSpacer space={hp(2)} />
             <View style={{...px(wp(4))}}>
                 <FlatList 
-                    data={data}
+                    data={transactions}
                     renderItem={({item, index}) => {
+
+                        const handleEdit = () => {
+                            navigation.navigate("NewTransaction", { type: activeTab === 0 ? "Expense" : "Earning", mode: "edit", id: item.id})
+                        }
                         return (
                             <>
                             {index !== 0 ? <CustomSpacer space={hp(2)} /> : null}
-                            <View style={itemContainer}>
+                            <Pressable onPress={handleEdit} style={itemContainer}>
                                 <Image source={{uri: "https://img.freepik.com/free-vector/handle-pump-nozzle-with-gold-drop-expensive-fuel-gas-realistic-object-isolated-vector-illustration_1284-81457.jpg?w=1380&t=st=1701123749~exp=1701124349~hmac=a1f023bf723efb19c3b27597596eb6e24d36c97d242bae5a3192098e5df3eaca"}} style={imageStyle}/>
                                 <CustomSpacer isHorizontal={true} space={wp(2)} />
                                 <LabeledTitle label={item.name} labelStyle={fs18BoldBlack2} title={item.category} titleStyle={fs14RegBlack2}/>
                                 <CustomFlexSpacer />
                                 <View style={endContainer}>
                                     <Text style={fs18BoldBlack2}>£{item.amount}</Text>
-                                    <Text style={fs14RegBlack2}>{item.date}</Text>
+                                    <Text style={fs14RegBlack2}>{dayjs(item.createdAt).format('DD/MM/YYYY')}</Text>
                                 </View>    
-                            </View>    
+                            </Pressable>    
                             </>
                         )
                     }}

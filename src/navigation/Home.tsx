@@ -26,7 +26,7 @@ export const HomeNavigation = () => {
           iconName: "dashboard",
         },
         {
-          name: "Transactions",
+          name: "TransactionsStack",
           component: TransactionStack,
           type: Icons.FontAwesome6,
           iconName: "money-bill-transfer",

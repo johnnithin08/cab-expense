@@ -13,10 +13,7 @@ export const onCreateTransactions = /* GraphQL */ `
       name
       description
       amount
-      userID
       createdAt
-      updatedAt
-      __typename
     }
   }
 `;
@@ -31,10 +28,7 @@ export const onUpdateTransactions = /* GraphQL */ `
       name
       description
       amount
-      userID
       createdAt
-      updatedAt
-      __typename
     }
   }
 `;

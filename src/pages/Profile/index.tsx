@@ -1,18 +1,49 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { View, Text } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
-import { signOut } from 'aws-amplify/auth';
+import { getCurrentUser, signOut } from 'aws-amplify/auth';
+import { generateClient } from 'aws-amplify/api';
 
-import { flexChild, colorGray, centerHV, fs24BoldBlack2, fs14BoldBlack2, fs16BoldBlack2, fs20BoldBlack2, colorBlue } from '../../styles'
-import { CustomSpacer } from '../../components';
+import { flexChild, colorGray, centerHV, fs24BoldBlack2, fs14BoldBlack2, fs16BoldBlack2, fs20BoldBlack2, colorBlue, flexRow, spaceBetweenHorizontal } from '../../styles'
+import { CustomFlexSpacer, CustomSpacer } from '../../components';
 import { RoundedButton } from '../../components/Touchables';
+import { getUser } from '../../graphql/queries';
+
+interface IUserDetails {
+  name: string;
+  email: string;
+  phoneNo: string;
+}
 
 export const Profile = () => {
+  const [userDetails, setUserDetails] = useState<IUserDetails>({ name: "", email: "", phoneNo: ""})
+  const client = generateClient();
 
   const handleLogout = () => {
     signOut();
   }
+
+  const fetchUserDetails = async () => {
+    try
+     {
+        const currentUser = await getCurrentUser();
+        const response = await client.graphql({
+          query: getUser,
+          variables: { id: currentUser.userId}
+        })
+        console.log("res", response.data.getUser)
+        setUserDetails(response.data.getUser)
+     }
+    catch(err)
+     {
+      console.log('err', err)
+     }
+  }
+
+  useEffect(() => {
+    fetchUserDetails();
+  },[])
   return (
     <View
     style={{...flexChild, backgroundColor: colorGray._1}}>
@@ -27,11 +58,20 @@ export const Profile = () => {
         </Text>
       </View>
       <CustomSpacer space={hp(4)} />
-      <Text style={fs20BoldBlack2}>Name: Nithin</Text>
+      <View style={{...flexRow,...spaceBetweenHorizontal}}>
+        <Text style={fs20BoldBlack2}>Name:</Text>
+        <Text style={fs20BoldBlack2}>{userDetails.name}</Text>
+      </View>
       <CustomSpacer space={hp(2)} />
-      <Text style={fs20BoldBlack2}>Username: johnnithin08</Text>
+      <View style={{...flexRow,...spaceBetweenHorizontal}}>
+        <Text style={fs20BoldBlack2}>Email:</Text>
+        <Text style={fs20BoldBlack2}>{userDetails.email}</Text>
+      </View>
       <CustomSpacer space={hp(2)} />
-      <Text style={fs20BoldBlack2}>Email: johnnithin08@gmail.com</Text>
+      <View style={{...flexRow,...spaceBetweenHorizontal}}>
+        <Text style={fs20BoldBlack2}>Phone No:</Text>
+        <Text style={fs20BoldBlack2}>{userDetails.phoneNo}</Text>
+      </View>
       <CustomSpacer space={hp(20)} />
       <View style={centerHV}>
       <RoundedButton buttonStyle={{backgroundColor: colorBlue._1}} text="Logout" onPress={handleLogout} />
