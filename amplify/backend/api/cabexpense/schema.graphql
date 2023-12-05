@@ -1,0 +1,17 @@
+type Transactions @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  type: String!
+  category: String!
+  name: String!
+  description: String!
+  amount: String!
+  userID: ID! @index(name: "byUser")
+}
+
+type User @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  name: String!
+  email: String
+  phoneNo: String
+  transactions: [Transactions] @hasMany(indexName: "byUser", fields: ["id"])
+}

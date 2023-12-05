@@ -19,6 +19,12 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react-native';
+import { Amplify } from 'aws-amplify';
+
+
+import awsExports from './src/aws-exports';
+Amplify.configure(awsExports);
 
 
 import {
@@ -47,7 +53,11 @@ export const  App = () => {
       <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={flexChild}>
-          <HomeNavigation />
+        <Authenticator.Provider>
+          <Authenticator signUpAttributes={["name", "phone_number"]}>
+              <HomeNavigation />
+          </Authenticator>
+        </Authenticator.Provider>
       </KeyboardAvoidingView>
     </SafeAreaProvider>
   );
