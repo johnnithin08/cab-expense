@@ -13,7 +13,11 @@ export const onCreateTransactions = /* GraphQL */ `
       name
       description
       amount
+      date
+      userID
       createdAt
+      updatedAt
+      __typename
     }
   }
 `;
@@ -28,7 +32,11 @@ export const onUpdateTransactions = /* GraphQL */ `
       name
       description
       amount
+      date
+      userID
       createdAt
+      updatedAt
+      __typename
     }
   }
 `;
@@ -43,6 +51,7 @@ export const onDeleteTransactions = /* GraphQL */ `
       name
       description
       amount
+      date
       userID
       createdAt
       updatedAt
@@ -65,6 +74,7 @@ export const onCreateUser = /* GraphQL */ `
           name
           description
           amount
+          date
           userID
           createdAt
           updatedAt
@@ -94,6 +104,7 @@ export const onUpdateUser = /* GraphQL */ `
           name
           description
           amount
+          date
           userID
           createdAt
           updatedAt
@@ -123,6 +134,7 @@ export const onDeleteUser = /* GraphQL */ `
           name
           description
           amount
+          date
           userID
           createdAt
           updatedAt

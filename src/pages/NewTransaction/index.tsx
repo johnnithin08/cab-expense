@@ -7,26 +7,28 @@ import { TextInput } from 'react-native-gesture-handler';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 
-import { CustomSpacer, Icon, Icons } from '../../components'
-import { centerHV, centerHorizontal, centerVertical, colorBlack, colorBlue, colorGray, flexChild, flexRow, flexRowCC, fs12BoldBlack2, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2 } from '../../styles';
+import { CustomSpacer, Icon, Icons, NewDatePicker } from '../../components'
+import { centerHV, centerHorizontal, centerVertical, colorBlack, colorBlue, colorGray, flexChild, flexRow, flexRowCC, fs12BoldBlack2, fs12BoldGray6, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2 } from '../../styles';
 import { CustomTextInput } from '../../components/Input';
 import { NewDropdown } from '../../components/Dropdown';
 import { CustomButton } from '../../components/Touchables/Button';
 import { RoundedButton } from '../../components/Touchables';
 import { createTransactions, updateTransactions } from '../../graphql/mutations';
 import { getTransactions } from '../../graphql/queries';
+import dayjs from 'dayjs';
 
 
 interface ITransactonType  {
   amount: string;
   category: string;
+  date: Date;
   description: string;
   name: string;
 }
 
 export const NewTransaction = () => {
-  const [transactionData, setTransactionData] = useState<ITransactonType>({name: "", description: "", category: "", amount: ""})
-  const {amount,category, description,name } = transactionData 
+  const [transactionData, setTransactionData] = useState<ITransactonType>({name: "", date: new Date, description: "", category: "", amount: ""})
+  const {amount,category,date, description,name } = transactionData 
   const navigation = useNavigation();
   const route = useRoute()
   const client = generateClient();
@@ -49,13 +51,18 @@ export const NewTransaction = () => {
     setTransactionData({...transactionData, category: value})
   }
 
+  const handleDateChange = (date: Date) => {
+    setTransactionData({...transactionData, date: date})
+  }
+
+
   const handleAddNewData = async () => {
     try 
      {
        const currentUser = await getCurrentUser();
        const response = await client.graphql({
          query: createTransactions,
-         variables: { input: { amount: amount, category: category, description: description, name: name, type: type,userID: currentUser.userId} }
+         variables: { input: { amount: amount, category: category, date: dayjs(date).toDate(), description: description, name: name, type: type,userID: currentUser.userId} }
        });
        navigation.navigate("Transactions");
      }
@@ -70,7 +77,7 @@ export const NewTransaction = () => {
      {
        const response = await client.graphql({
          query: updateTransactions,
-         variables: { input: { id: id, amount: amount, category: category, description: description, name: name, type: type} }
+         variables: { input: { id: id, amount: amount, category: category, date: dayjs(date).toDate(), description: description, name: name, type: type} }
        });
        navigation.navigate("Transactions");
      }
@@ -98,9 +105,8 @@ export const NewTransaction = () => {
         query: getTransactions,
         variables: {  id: id }
       });
-      const {amount,category, description, name } = response.data.getTransactions
-      setTransactionData({ amount, category, description, name})
-      console.log("resp", response)
+      const {amount, date, category, description, name } = response.data.getTransactions
+      setTransactionData({ amount, category, date, description, name})
      }
     catch(err)
      {
@@ -171,12 +177,22 @@ export const NewTransaction = () => {
           <CustomSpacer space={hp(4)} />
           <CustomTextInput id="name" label='Amount' value={amount} onChangeText={(value) => handleChange(value, "amount")} viewStyle={{width: wp(50)}}/>
           <CustomSpacer space={hp(4)} />
+          <Text style={fs12BoldGray6}>Transaction Date</Text>
+          <CustomSpacer space={hp(1)} />
+          <NewDatePicker 
+            datePickerStyle={{width: wp(70)}}
+            viewStyle={{width: wp(70)}}
+            mode={"date"} 
+            value={date}
+            setValue={handleDateChange}            
+          /> 
+          <CustomSpacer space={hp(4)} />
           <NewDropdown 
             handleChange={handleCategory}
             items={checkCategory}
             label='Category'
             value={category}
-            viewStyle={{width: wp(50)}}
+            viewStyle={{width: wp(70)}}
           />
           <CustomSpacer space={hp(8)} />
           <View style={flexRowCC}>

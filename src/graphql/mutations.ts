@@ -14,6 +14,7 @@ export const createTransactions = /* GraphQL */ `
       name
       description
       amount
+      date
       userID
       createdAt
       updatedAt
@@ -33,6 +34,7 @@ export const updateTransactions = /* GraphQL */ `
       name
       description
       amount
+      date
       userID
       createdAt
       updatedAt
@@ -52,6 +54,7 @@ export const deleteTransactions = /* GraphQL */ `
       name
       description
       amount
+      date
       userID
       createdAt
       updatedAt
@@ -77,6 +80,7 @@ export const createUser = /* GraphQL */ `
           name
           description
           amount
+          date
           userID
           createdAt
           updatedAt
@@ -109,6 +113,7 @@ export const updateUser = /* GraphQL */ `
           name
           description
           amount
+          date
           userID
           createdAt
           updatedAt
@@ -141,6 +146,7 @@ export const deleteUser = /* GraphQL */ `
           name
           description
           amount
+          date
           userID
           createdAt
           updatedAt
