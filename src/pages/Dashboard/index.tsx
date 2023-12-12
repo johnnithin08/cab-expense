@@ -1,87 +1,189 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text } from 'react-native'
+import { View, Text, ViewStyle } from 'react-native'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { PieChart } from "react-native-gifted-charts";
-import {fetchUserAttributes} from "aws-amplify/auth"
+import {fetchUserAttributes, getCurrentUser} from "aws-amplify/auth"
+import { ScrollView } from 'react-native-gesture-handler';
+import dayjs from 'dayjs';
 
-import { centerHV, centerHorizontal, centerVertical, colorGray, flexChild, flexRow, flexRowCC, fs14BoldBlack2, fs16BoldBlack2, fs20BoldBlack2, fs24BoldBlack2, px, spaceBetweenVertical } from '../../styles'
-import { CustomSpacer, SingleSelectPills } from '../../components'
+import { centerHV, centerHorizontal, centerVertical, colorBlue, colorGray, colorWhite, flexChild, flexRow, flexRowCC, flexWrap, fs14BoldBlack2, fs16BoldBlack2, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2, px, spaceBetweenHorizontal, spaceBetweenVertical } from '../../styles'
+import { CustomSpacer, SingleSelectPills, TabGroup, TabProps } from '../../components'
+import { generateClient } from 'aws-amplify/api';
+import { transactionsByUserID } from '../../graphql/queries';
 
-type TDateFilter = "Last month" | "Last 6 months" | "Last Year"
+type TDateFilter = "This month" | "Last 6 months" | "This Year"
+
+interface IGroupedTransactions {
+  name: string;
+  value: number;
+}
+
+const colorArray = [
+  '#FF6384',
+  '#36A2EB',
+  '#FFCE56',
+  '#4BC0C0',
+  '#9966FF',
+  '#FF965A',
+  '#2E7D32',
+  '#8D6E63',
+  '#FFD54F',
+  '#AB47BC',
+]
 
 
-const renderDot = color => {
+const renderDot = colorIndex => {
   return (
     <View
       style={{
         height: 10,
         width: 10,
         borderRadius: 5,
-        backgroundColor: color,
+        backgroundColor: colorArray[colorIndex],
         marginRight: 10,
       }}
     />
   );
 };
 
-const renderLegendComponent = () => {
-  return (
-    <>
-      <View
-        style={{
-          ...flexRow,
-          ...centerHorizontal,
-          ...spaceBetweenVertical,
-        }}>
-        <View
-          style={{
-            ...flexRow,
-            ...centerVertical,
-            width: wp(30),
-            marginRight: wp(4)
-          }}>
-          {renderDot('#006DFF')}
-          <Text style={fs16BoldBlack2}>Expenses: 47%</Text>
-        </View>
-        <View
-          style={{...flexRowCC, width: wp(30)}}>
-          {renderDot('#8F80F3')}
-          <Text style={fs16BoldBlack2}>Earnings: 53%</Text>
-        </View>
-      </View>
-    </>
-  );
-};
+
 
 export const Dashboard = () => {
-  const [dateFilter, setDateFilter] = useState<TDateFilter>("Last month")
+  const [activeTab, setActiveTab] = useState<number>(0)
+  const [dateFilter, setDateFilter] = useState<TDateFilter>("This month")
+  const [transactions, setTransactions] = useState<ITransactions[]>([])
+  const [groupedTransactions, setGroupedTransactions] = useState<IGroupedTransactions[]>([])
+  const [selectedGroup, setSelectedGroup] = useState<IGroupedTransactions>(groupedTransactions[0] || { name: "", value: 0})
+  const client = generateClient()
+
+  const timeSlots = {
+    "This month": [dayjs().startOf("month").toISOString(),dayjs().endOf("month").toISOString()],
+    "Last 6 months": [dayjs().subtract(6, "months").toISOString(), dayjs().toISOString()],
+    "This Year": [dayjs().startOf("year").toISOString(), dayjs().toISOString()],
+  }
   
   const handleDateFilter = (value: string) => {
     setDateFilter(value as TDateFilter)
   }
-  const pieData = [
-    {
-      value: 47,
-      color: '#009FFF',
-      focused: true,
-    },
-    {value: 53, color: '#93FCF8',},
-  ];
-  
-  const dataFilterArray: IPillsWithSubLabel[] = [{ label: "Last month" }, { label: "Last 6 months" }, { label: "Last Year" }]
-  
-  useEffect(() => {
-    const fetch = async () => {
-    console.log("auth", await fetchUserAttributes())
 
+  const handleSelectSection = (_item, index: number) => {
+    setSelectedGroup(groupedTransactions[index])
   }
-  fetch();
-})
+
+  const handleTabs = (index: number) => {
+    setActiveTab(index)
+  }
+
+  const groupByCategory = (transactions: ITransactions[]) => {
+    const result: Record<string, number> = {};
+  
+    if(transactions.length > 0)
+     {
+       transactions.forEach((transaction) => {
+         const { category, amount } = transaction;
+         result[category] = (result[category] || 0) + parseFloat(amount);
+       });
+   
+       const total = Object.values(result).reduce((acc, current) => acc + current)
+       const groupByArray = Object.entries(result).map(([key, value]) => {
+         return {
+           name: key,
+           value: (value / total) * 100
+         }
+       })
+       setGroupedTransactions(groupByArray)
+       setSelectedGroup(groupByArray[0])
+     }
+  }
+
+  const fetchTransactionsByDate = async () => {
+    try 
+     {
+        const currentUser = await getCurrentUser();
+        const response = await client.graphql({
+            query: transactionsByUserID,
+            variables: { userID: currentUser.userId, filter: {date: { between: timeSlots[dateFilter]}, type: { eq: activeTab === 0 ? "Expense" : "Earning"}}}
+          });
+        groupByCategory(response.data.transactionsByUserID.items)
+     }
+    catch(err)
+     {
+        console.log("err", err)
+     }
+  }
+
+  const renderLegendComponent = () => {
+    return (
+      <>
+        <View
+          style={{
+            ...flexRow,
+            ...flexWrap,
+            ...centerVertical,
+            ...spaceBetweenHorizontal,
+          }}>
+          {groupedTransactions.map((eachColor, eachIndex) => {
+              return (
+                <View
+                    key={eachIndex}
+                    style={{
+                      ...flexRow,
+                      ...centerVertical,
+                      marginTop: hp(1),
+                      width: wp(30),
+                    }}>
+                {renderDot(eachIndex)}
+                <Text style={fs16BoldBlack2}>{eachColor.name}</Text>
+              </View>
+              )
+          })}
+        </View>
+      </>
+    );
+  };
+
+
+  const pieData = groupedTransactions.map((eachGroup,groupIndex ) => {
+    return {
+      focused: eachGroup.name === selectedGroup.name,
+      value: eachGroup.value,
+      color: colorArray[groupIndex],
+    }
+  })
+  const tabs: TabProps[] = [{
+    selected: activeTab === 0,
+    text: "Expenses",
+    style: {...flexChild, height: hp(5)},
+    textStyle: fs14BoldBlack2,
+    
+  },
+  {
+    selected: activeTab === 1,
+    text: "Earnings",
+    style: {...flexChild, height: hp(5)},
+    textStyle: fs14BoldBlack2,
+    
+  }]
+  
+  const dataFilterArray: IPillsWithSubLabel[] = [{ label: "This month" }, { label: "Last 6 months" }, { label: "This Year" }]
+  
+  useEffect(() => 
+  {
+    setSelectedGroup({name: "", value: 0});
+    fetchTransactionsByDate();
+
+  },[activeTab, dateFilter])
+
+  const tabGroupContainer: ViewStyle = {
+    ...flexRowCC,
+    backgroundColor: colorGray._3,
+    borderRadius: wp(5),
+  }
 
 
 return (
-  <View
+  <ScrollView
     style={{...flexChild, backgroundColor: colorGray._1}}>
     <View
       style={{
@@ -92,23 +194,28 @@ return (
         <Text style={{...fs24BoldBlack2, ...centerHV}}>
           Dashboard
         </Text>
+        <CustomSpacer space={hp(4)} />
+        <View style={tabGroupContainer}>
+          <TabGroup activeTab={activeTab} setActiveTab={handleTabs} tabs={tabs} selectedViewStyle={{borderBottomWidth: 0, backgroundColor: colorBlue._1, borderRadius: wp(5)}} selectedTextStyle={{color: colorWhite._1}} />
+        </View>
       </View>
       <View style={{padding: 20, alignItems: 'center'}}>
         <PieChart
           data={pieData}
+          onPress={handleSelectSection}
           donut
-          // showGradient
           sectionAutoFocus
           focusOnPress={true}
+          toggleFocusOnPress={false}
           radius={wp(25)}
           innerRadius={wp(15)}
           centerLabelComponent={() => {
             return (
               <View style={centerHV}>
                 <Text style={fs20BoldBlack2}>
-                  47%
+                  {`${selectedGroup.value.toFixed(1)}%`}
                 </Text>
-                <Text style={fs20BoldBlack2}>Profit</Text>
+                <Text style={fs20BoldBlack2}>{selectedGroup.name}</Text>
               </View>
             );
           }}
@@ -133,5 +240,7 @@ return (
           <Text style={fs20BoldBlack2}>Total Expenses: </Text>
           <Text style={fs20BoldBlack2}>Net: </Text>
     </View>
-  </View>);
+    <CustomSpacer space={hp(20)} />
+  </ScrollView>
+  )
 }

@@ -12,18 +12,10 @@ import { LabeledTitle } from '../../components/Views/LabeledTitle';
 import { transactionsByUserID } from '../../graphql/queries';
 import { onCreateTransactions, onUpdateTransactions } from '../../graphql/subscriptions';
 
-interface ITrasnactions {
-    amount: string;
-    category: string;
-    createdAt: Date;
-    description: string;
-    id: string;
-    name: string;
-    type: string;
-}
+
 
 export const Transactions = () => {
-    const [transactions, setTransactions] = useState<ITrasnactions[]>([])
+    const [transactions, setTransactions] = useState<ITransactions[]>([])
     const navigation = useNavigation()
     const [activeTab, setActiveTab] = useState<number>(0)
     const client = generateClient();
@@ -61,7 +53,6 @@ export const Transactions = () => {
                 variables: { userID: currentUser.userId, filter: { type: { eq: activeTab === 0 ? "Expense" : "Earning"} }}
               });
             setTransactions(response.data.transactionsByUserID.items)
-            console.log("resps", response)
          }
         catch(err)
          {

@@ -32,7 +32,6 @@ export const Profile = () => {
           query: getUser,
           variables: { id: currentUser.userId}
         })
-        console.log("res", response.data.getUser)
         setUserDetails(response.data.getUser)
      }
     catch(err)

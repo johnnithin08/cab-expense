@@ -36,7 +36,7 @@ export const TabGroup: FunctionComponent<TabGroupProps> = ({
         const checkStyle = unSelectedViewStyle !== undefined ? unSelectedViewStyle : {};
         const borderStyle: ViewStyle = activeTab !== index ? checkStyle : {};
         const checkSelectedView: ViewStyle = activeTab === index && selectedViewStyle !== undefined ? selectedViewStyle : {};
-        const checkSelectedText: TextStyle = activeTab === index && selectedTextStyle !== undefined ? selectedTextStyle : {};
+        const checkSelectedText: TextStyle = activeTab === index && selectedTextStyle !== undefined ? {...tab.textStyle, ...selectedTextStyle} : {...tab.textStyle};
         const tabStyle: ViewStyle = { ...borderStyle, ...tab.style, ...checkSelectedView };
 
         return (
@@ -44,9 +44,9 @@ export const TabGroup: FunctionComponent<TabGroupProps> = ({
             key={index}
             onPress={handleTabPress}
             selected={activeTab === index}
-            style={tabStyle}
-            textStyle={checkSelectedText}
             {...tab}
+            textStyle={checkSelectedText}
+            style={tabStyle}
           />
         );
       })}
