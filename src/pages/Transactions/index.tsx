@@ -6,20 +6,35 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
 
-import { absolutePosition, border, colorBlack, colorWhite, flexChild, flexRow, fs12RegBlack2, fs14BoldBlack2, fs14RegBlack2, fs16BoldBlack2, fs18BoldBlack2, justifyContentEnd, px, py, spaceBetweenHorizontal, sw1 } from '../../styles'
-import { CustomFlexSpacer, CustomSpacer, Icon, Icons, TabGroup, TabProps } from '../../components';
+import { absolutePosition, border, centerHV, colorBlack, colorBlue, colorGray, colorTransparent, colorWhite, flexChild, flexRow, fs12BoldGray6, fs12RegBlack2, fs14BoldBlack2, fs14RegBlack2, fs16BoldBlack2, fs18BoldBlack2, fullWidth, justifyContentEnd, px, py, spaceBetweenHorizontal, sw1 } from '../../styles'
+import { CustomFlexSpacer, CustomSpacer, Icon, Icons, NewDatePicker, SingleSelectPills, TabGroup, TabProps } from '../../components';
 import { LabeledTitle } from '../../components/Views/LabeledTitle';
 import { transactionsByUserID } from '../../graphql/queries';
 import { onCreateTransactions, onUpdateTransactions } from '../../graphql/subscriptions';
+import { AnimationUtils } from '../../utils';
+import { RoundedButton } from '../../components/Touchables';
+
+type TCustomDate = {
+    from?: Date;
+    to?: Date;
+}
 
 
 
 export const Transactions = () => {
+    const [dateFilter, setDateFilter] = useState<TDateFilter>("Daily")
+    const [customDate, setCustomDate] = useState<TCustomDate>({from: new Date, to: new Date})
     const [transactions, setTransactions] = useState<ITransactions[]>([])
+    const [showFilter, setShowFilter] = useState<boolean>(false)
     const navigation = useNavigation()
     const [activeTab, setActiveTab] = useState<number>(0)
     const client = generateClient();
-    const isFocused = useIsFocused()
+    const isFocused = useIsFocused();
+
+    const timeSlots = {
+        "Daily": [dayjs().startOf("day").toISOString(),dayjs().endOf("day").toISOString()],
+        "This week": [dayjs().startOf("week").toISOString(), dayjs().endOf("week").toISOString()],
+      }
 
     const tabs: TabProps[] = [{
       selected: activeTab === 0,
@@ -44,15 +59,47 @@ export const Transactions = () => {
         navigation.navigate("NewTransaction", { type: activeTab === 0 ? "Expense" : "Earning", mode: "new"})
     }
 
-    const fetchTransactions = async () => {
+    const handleDateFilter = (value: string) => {
+        setDateFilter(value as TDateFilter)
+        if(value === "Custom")
+         {
+            setShowFilter(true)
+         }
+        else
+        {
+            setShowFilter(false)
+        }
+        AnimationUtils.layout({duration: 500})
+    }
+
+    const handleDateChangeFrom = (date: Date) => {
+        setCustomDate({...customDate, from: date})
+    }
+
+    const handleDateChangeTo = (date: Date) => {
+        setCustomDate({...customDate, to: date})
+    }
+
+    const handleFilter = () => {
+        fetchTransactions(true);
+        setShowFilter(false)
+        AnimationUtils.layout({duration: 500})
+
+    }
+
+    const fetchTransactions = async (custom?: boolean) => {
         try 
          {
             const currentUser = await getCurrentUser();
+            const checkTimeFilter = custom === true || dateFilter === "Custom" ? [dayjs(customDate.from).toISOString(), dayjs(customDate.to).toISOString()] : timeSlots[dateFilter] 
             const response = await client.graphql({
                 query: transactionsByUserID,
-                variables: { userID: currentUser.userId, filter: { type: { eq: activeTab === 0 ? "Expense" : "Earning"} }}
+                variables: { userID: currentUser.userId, filter: { date: { between: checkTimeFilter} }}
               });
-            setTransactions(response.data.transactionsByUserID.items)
+            const expenseTransactions = response.data.transactionsByUserID.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
+            const earningTransactions = response.data.transactionsByUserID.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
+            const currentTransactions = activeTab === 0 ? expenseTransactions : earningTransactions
+            setTransactions(currentTransactions)
          }
         catch(err)
          {
@@ -68,28 +115,9 @@ export const Transactions = () => {
           next: ({ data }) => setTransactions([data.onCreateTransactions, ...transactions]),
           error: (error) => console.warn(error)
         });
-    },[activeTab, isFocused])
+    },[activeTab, dateFilter, isFocused])
 
-    const data = [
-        {
-        amount: "15",
-        category: "Petrol",
-        date: "24/03/2021",
-        name: "Fuel for car"
-        },
-        {
-        amount: "15",
-        category: "Petrol",
-        date: "24/03/2021",
-        name: "Fuel for car"
-        },
-        {
-        amount: "15",
-        category: "Petrol",
-        date: "24/03/2021",
-        name: "Fuel for car"
-        },
-    ]
+    const dataFilterArray: IPillsWithSubLabel[] = [{ label: "Daily" }, { label: "This week" }, { label: "Custom" }]
 
     const itemContainer: ViewStyle = {
         ...flexRow,
@@ -115,10 +143,57 @@ export const Transactions = () => {
         ...px(wp(2)),
         ...py(wp(2)),
     }
+    const filterContainer: ViewStyle = {
+        ...flexChild, 
+        backgroundColor: showFilter === true ? colorWhite._1 : colorTransparent, 
+        borderRadius: wp(2),  
+        paddingVertical: showFilter === true ? hp(2) : 0
+    }
   return (
     <SafeAreaView style={flexChild}>
         <View style={flexChild}>
-            <CustomSpacer space={hp(2)} />
+            <CustomSpacer space={hp(4)} />
+            <View style={{...px(wp(4)), ...absolutePosition, ...fullWidth, top: hp(2), zIndex: 10}}>
+                <View style={filterContainer}>
+                    <View style={centerHV}>
+                        <SingleSelectPills
+                            direction="row"
+                            labels={dataFilterArray}
+                            labelStyle={px(wp(4))}
+                            space={wp(2)}
+                            onSelect={handleDateFilter}
+                            value={dateFilter}
+                        />
+                    </View>
+                    {showFilter === true ? (
+                        <View style={{...px(wp(2))}}>
+                            <CustomSpacer space={hp(4)} />
+                            <Text style={fs12BoldGray6}>Date From</Text>
+                            <CustomSpacer space={hp(1)} />
+                            <NewDatePicker 
+                                datePickerStyle={{width: wp(70)}}
+                                viewStyle={{width: wp(70)}}
+                                mode={"date"} 
+                                value={customDate.from}
+                                setValue={handleDateChangeFrom}            
+                            /> 
+                            <CustomSpacer space={hp(4)} />
+                            <Text style={fs12BoldGray6}>Date To</Text>
+                            <CustomSpacer space={hp(1)} />
+                            <NewDatePicker 
+                                datePickerStyle={{width: wp(70)}}
+                                viewStyle={{width: wp(70)}}
+                                mode={"date"} 
+                                value={customDate.to}
+                                setValue={handleDateChangeTo}            
+                            /> 
+                            <CustomSpacer space={hp(4)} />
+                            <RoundedButton buttonStyle={{backgroundColor: colorBlue._1, borderColor: colorBlue._1}} onPress={handleFilter} text={'Filter'} />
+                        </View>
+                    ): null}
+                </View>
+            </View>
+            <CustomSpacer space={hp(4)} />
             <TabGroup activeTab={activeTab} setActiveTab={handleTabs} tabs={tabs} />
             <CustomSpacer space={hp(2)} />
             <View style={{...px(wp(4))}}>
@@ -141,12 +216,15 @@ export const Transactions = () => {
                                     <Text style={fs18BoldBlack2}>£{item.amount}</Text>
                                     <Text style={fs14RegBlack2}>{dayjs(item.createdAt).format('DD/MM/YYYY')}</Text>
                                 </View>    
-                            </Pressable>    
+                            </Pressable>  
+                            {index === transactions.length - 1 ? <CustomSpacer space={hp(30)} /> : null}  
                             </>
                         )
                     }}
                 />
             </View>
+            <CustomSpacer space={hp(4)} />
+            
             <Pressable onPress={handleAdd} style={addButtonStyle}>
                 <Icon type={Icons.Ionicons} name="add" size={hp(4)} />
             </Pressable>

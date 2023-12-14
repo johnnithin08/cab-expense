@@ -322,6 +322,13 @@ export const fs14BoldGray6: TextStyle = {
   lineHeight: scaleHeight(14 * 1.3),
 };
 
+export const fs14BoldWhite1: TextStyle = {
+  color: colorWhite._1,
+  fontFamily: NunitoBold,
+  fontSize: sh14,
+  lineHeight: scaleHeight(14 * 1.3),
+};
+
 export const fs14RegBlack1: TextStyle = {
   color: colorBlack._1,
   fontFamily: NunitoRegular,
