@@ -11,8 +11,7 @@ import { centerHV, centerHorizontal, centerVertical, colorBlue, colorGray, color
 import { CustomSpacer, SingleSelectPills, TabGroup, TabProps } from '../../components'
 import { generateClient } from 'aws-amplify/api';
 import { transactionsByUserID } from '../../graphql/queries';
-
-type TDateFilter = "This month" | "Last 6 months" | "This Year"
+import { useIsFocused } from '@react-navigation/native';
 
 interface IGroupedTransactions {
   name: string;
@@ -55,7 +54,8 @@ export const Dashboard = () => {
   const [transactions, setTransactions] = useState<ITransactions[]>([])
   const [groupedTransactions, setGroupedTransactions] = useState<IGroupedTransactions[]>([])
   const [selectedGroup, setSelectedGroup] = useState<IGroupedTransactions>(groupedTransactions[0] || { name: "", value: 0})
-  const client = generateClient()
+  const client = generateClient();
+  const isFocused = useIsFocused()
 
   const timeSlots = {
     "This month": [dayjs().startOf("month").toISOString(),dayjs().endOf("month").toISOString()],
@@ -103,9 +103,13 @@ export const Dashboard = () => {
         const currentUser = await getCurrentUser();
         const response = await client.graphql({
             query: transactionsByUserID,
-            variables: { userID: currentUser.userId, filter: {date: { between: timeSlots[dateFilter]}, type: { eq: activeTab === 0 ? "Expense" : "Earning"}}}
+            variables: { userID: currentUser.userId, filter: {date: { between: timeSlots[dateFilter]}}}
           });
-        groupByCategory(response.data.transactionsByUserID.items)
+        const expenseTransactions = response.data.transactionsByUserID.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
+        const earningTransactions = response.data.transactionsByUserID.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
+        const transactionsToBeGrouped = activeTab === 0 ? expenseTransactions : earningTransactions
+        setTransactions(response.data.transactionsByUserID.items)
+        groupByCategory(transactionsToBeGrouped)
      }
     catch(err)
      {
@@ -175,11 +179,20 @@ export const Dashboard = () => {
 
   },[activeTab, dateFilter])
 
+  useEffect(() => {
+    fetchTransactionsByDate();
+  },[isFocused])
+
   const tabGroupContainer: ViewStyle = {
     ...flexRowCC,
     backgroundColor: colorGray._3,
     borderRadius: wp(5),
   }
+
+  const totalEarnings = transactions.length > 0 ? transactions.filter((eachEarning: ITransactions) => eachEarning.type === "Earning").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
+  const totalExpenses = transactions.length > 0 ? transactions.filter((eachEarning: ITransactions) => eachEarning.type === "Expense").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
+  const netIncome = transactions.length > 0 ? totalEarnings - totalExpenses : 0;
+  console.log("tot", transactions, totalEarnings, totalExpenses, netIncome)
 
 
 return (
@@ -236,9 +249,9 @@ return (
     </View>
     <CustomSpacer space={hp(5)} />
     <View style={centerHV}>
-          <Text style={fs20BoldBlack2}>Total Earnings: </Text>
-          <Text style={fs20BoldBlack2}>Total Expenses: </Text>
-          <Text style={fs20BoldBlack2}>Net: </Text>
+          <Text style={fs20BoldBlack2}>Total Earnings: £{totalEarnings}</Text>
+          <Text style={fs20BoldBlack2}>Total Expenses: £{totalExpenses}</Text>
+          <Text style={fs20BoldBlack2}>Net: £{netIncome}</Text>
     </View>
     <CustomSpacer space={hp(20)} />
   </ScrollView>

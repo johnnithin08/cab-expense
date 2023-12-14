@@ -11,12 +11,17 @@ import {
   colorGreen,
   colorRed,
   disabledOpacity6,
+  flexChild,
   flexCol,
   flexRow,
+  flexRowCC,
   fs12BoldBlack2,
   fs12BoldBlue1,
   fs12BoldGray6,
   fs12BoldWhite1,
+  fs14BoldBlack2,
+  fs14BoldBlue1,
+  fs14BoldWhite1,
   px,
   sh14,
   sh16,
@@ -120,7 +125,7 @@ export const SingleSelectPills: FunctionComponent<SingleSelectPillsProps> = ({
               height: sh40,
               ...selectedStyle,
             };
-            const textStyle: TextStyle = value === label ? fs12BoldWhite1 : fs12BoldBlue1;
+            const textStyle: TextStyle = value === label ? fs14BoldWhite1 : fs14BoldBlue1;
             const defaultSpaceToLabel = spaceToLabel !== undefined ? spaceToLabel : sw4;
 
             return (
@@ -131,15 +136,15 @@ export const SingleSelectPills: FunctionComponent<SingleSelectPillsProps> = ({
                     <CustomContent {...customContentProps} />
                   ) : (
                     <View style={{ ...centerVertical, ...disabledStyle }}>
-                      <View style={{ ...flexRow, ...containerStyle }}>
+                      <View style={{ ...flexRowCC, ...containerStyle }}>
                         <CustomSpacer isHorizontal={true} space={defaultSpaceToLabel} />
                         <Text
                           style={{
-                            ...fs12BoldBlack2,
+                            ...fs14BoldBlack2,
+                            fontSize: sh14,
                             fontFamily: NunitoBold,
                             maxWidth: sw326,
                             ...textStyle,
-                            fontSize: sh14,
                             ...mainLabelStyle,
                             ...labelStyle,
                           }}>
