@@ -2,6 +2,51 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
+export const onCreateCategories = /* GraphQL */ `
+  subscription OnCreateCategories(
+    $filter: ModelSubscriptionCategoriesFilterInput
+  ) {
+    onCreateCategories(filter: $filter) {
+      id
+      type
+      categories
+      userID
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onUpdateCategories = /* GraphQL */ `
+  subscription OnUpdateCategories(
+    $filter: ModelSubscriptionCategoriesFilterInput
+  ) {
+    onUpdateCategories(filter: $filter) {
+      id
+      type
+      categories
+      userID
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onDeleteCategories = /* GraphQL */ `
+  subscription OnDeleteCategories(
+    $filter: ModelSubscriptionCategoriesFilterInput
+  ) {
+    onDeleteCategories(filter: $filter) {
+      id
+      type
+      categories
+      userID
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
 export const onCreateTransactions = /* GraphQL */ `
   subscription OnCreateTransactions(
     $filter: ModelSubscriptionTransactionsFilterInput
@@ -83,6 +128,19 @@ export const onCreateUser = /* GraphQL */ `
         nextToken
         __typename
       }
+      categories {
+        items {
+          id
+          type
+          categories
+          userID
+          createdAt
+          updatedAt
+          __typename
+        }
+        nextToken
+        __typename
+      }
       createdAt
       updatedAt
       __typename
@@ -113,6 +171,19 @@ export const onUpdateUser = /* GraphQL */ `
         nextToken
         __typename
       }
+      categories {
+        items {
+          id
+          type
+          categories
+          userID
+          createdAt
+          updatedAt
+          __typename
+        }
+        nextToken
+        __typename
+      }
       createdAt
       updatedAt
       __typename
@@ -135,6 +206,19 @@ export const onDeleteUser = /* GraphQL */ `
           description
           amount
           date
+          userID
+          createdAt
+          updatedAt
+          __typename
+        }
+        nextToken
+        __typename
+      }
+      categories {
+        items {
+          id
+          type
+          categories
           userID
           createdAt
           updatedAt

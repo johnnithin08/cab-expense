@@ -3,19 +3,20 @@ import { View, Text, Pressable, NativeSyntheticEvent, TextInputChangeEventData, 
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { TextInput } from 'react-native-gesture-handler';
+import { ScrollView, TextInput } from 'react-native-gesture-handler';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
+import dayjs from 'dayjs';
 
 import { CustomSpacer, Icon, Icons, NewDatePicker } from '../../components'
-import { centerHV, centerHorizontal, centerVertical, colorBlack, colorBlue, colorGray, flexChild, flexRow, flexRowCC, fs12BoldBlack2, fs12BoldGray6, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2 } from '../../styles';
+import { alignItemsEnd, centerHV, centerHorizontal, centerVertical, circle, colorBlack, colorBlue, colorGray, colorWhite, flexChild, flexRow, flexRowCC, fs12BoldBlack2, fs12BoldGray6, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2 } from '../../styles';
 import { CustomTextInput } from '../../components/Input';
 import { NewDropdown } from '../../components/Dropdown';
 import { CustomButton } from '../../components/Touchables/Button';
 import { RoundedButton } from '../../components/Touchables';
-import { createTransactions, updateTransactions } from '../../graphql/mutations';
-import { getTransactions } from '../../graphql/queries';
-import dayjs from 'dayjs';
+import { createCategories, createTransactions, updateCategories, updateTransactions } from '../../graphql/mutations';
+import { categoriesByUserID, getTransactions } from '../../graphql/queries';
+import { Switch } from '../../components/Switch/Switch';
 
 
 interface ITransactonType  {
@@ -24,17 +25,70 @@ interface ITransactonType  {
   date: Date;
   description: string;
   name: string;
+  newCategory: boolean;
+  newCategoryValue: string;
 }
 
+interface ICategoryData {
+  id: string;
+  categories: string[];
+}
+
+const earningTypes: TypeLabelValue[] = [
+  {
+    label: "RJ Cash",
+    value: "RJ Cash"
+  },
+  {
+    label: "RJ Card",
+    value: "RJ Card"
+  },
+  {
+    label: "Tips",
+    value: "Tips"
+  },
+  {
+    label: "Other",
+    value: "Other"
+  },
+]
+const expenseTypes: TypeLabelValue[] = [
+  {
+    label: "Fuel",
+    value: "Fuel"
+  },
+  {
+    label: "Full Service",
+    value: "Full Service"
+  },
+  {
+    label: "Car Insurance",
+    value: "Car Insurance"
+  },
+  {
+    label: "Road Tax",
+    value: "Road Tax"
+  },
+  {
+    label: "Other",
+    value: "Other"
+  },
+]
+
 export const NewTransaction = () => {
-  const [transactionData, setTransactionData] = useState<ITransactonType>({name: "", date: new Date, description: "", category: "", amount: ""})
-  const {amount,category,date, description,name } = transactionData 
+  const [categories, setCategories] = useState<ICategoryData | undefined>(undefined)
+  const [transactionData, setTransactionData] = useState<ITransactonType>({name: "", date: new Date, description: "", category: "", newCategory: false, newCategoryValue: "", amount: ""})
+  const {amount,category,date, description,name, newCategory, newCategoryValue } = transactionData 
   const navigation = useNavigation();
   const route = useRoute()
   const client = generateClient();
   const type = route.params.type;
   const mode = route.params.mode;
   const id = route.params.id;
+
+  const checkCategory = type === "Earning" ? earningTypes : expenseTypes;
+  const currentCategories = categories !== undefined ? categories.categories.map((eachCategory) => ({ label: eachCategory, value: eachCategory})) : checkCategory;
+
 
   const handleBack = () => {
     navigation.navigate("Transactions")
@@ -53,6 +107,10 @@ export const NewTransaction = () => {
 
   const handleDateChange = (date: Date) => {
     setTransactionData({...transactionData, date: date})
+  }
+
+  const handleAddNewCategory = () => {
+    setTransactionData({...transactionData, newCategory: !transactionData.newCategory})
   }
 
 
@@ -98,6 +156,35 @@ export const NewTransaction = () => {
      }
   }
 
+  const handleAdd = async () => {
+    try
+     {
+        const currentUser = await getCurrentUser();
+        const currentCategoryLabels = currentCategories.map((eachCategory) => eachCategory.label)
+        if(categories !== undefined)
+         {
+          await client.graphql({
+            query: updateCategories,
+            variables: { input: {id: categories.id , categories: [...currentCategoryLabels, newCategoryValue]}}
+          })
+          
+         }
+        else
+         {
+          await client.graphql({
+            query: createCategories,
+            variables: { input: {userID: currentUser.userId, type: type, categories: [...currentCategoryLabels, newCategoryValue]}}
+          })
+         }
+        setTransactionData({...transactionData, newCategory: false})
+        handleFetchCategories()
+     }
+    catch(err)
+     {
+        console.log("err", err)
+     }
+  }
+
   const handleFetchTransaction = async () => {
     try
      {
@@ -106,7 +193,7 @@ export const NewTransaction = () => {
         variables: {  id: id }
       });
       const {amount, date, category, description, name } = response.data.getTransactions
-      setTransactionData({ amount, category, date, description, name})
+      setTransactionData({ amount, category, date, description, name, newCategory: false, newCategoryValue: "" })
      }
     catch(err)
      {
@@ -114,57 +201,40 @@ export const NewTransaction = () => {
      }
   }
 
+  const handleFetchCategories = async () => {
+    try
+     {
+       const currentUser = await getCurrentUser();
+       const response = await client.graphql({
+             query: categoriesByUserID,
+             variables: { userID: currentUser.userId, filter: {type: {eq: type}}}
+           })
+        if(response.data.categoriesByUserID.items.length > 0)
+         {
+          setCategories({id: response.data.categoriesByUserID.items[0].id, categories: response.data.categoriesByUserID.items[0].categories})
+         }
+     }
+     catch(err)
+      {
+        console.log("err", err)
+      }
+  }
+
   useEffect(() => {
     if(id)
      {
-      handleFetchTransaction()
+      handleFetchTransaction();
      }
   },[id])
 
-  const earningTypes: TypeLabelValue[] = [
-    {
-      label: "RJ Cash",
-      value: "RJ Cash"
-    },
-    {
-      label: "RJ Card",
-      value: "RJ Card"
-    },
-    {
-      label: "Tips",
-      value: "Tips"
-    },
-    {
-      label: "Other",
-      value: "Other"
-    },
-  ]
-  const expenseTypes: TypeLabelValue[] = [
-    {
-      label: "Fuel",
-      value: "Fuel"
-    },
-    {
-      label: "Full Service",
-      value: "Full Service"
-    },
-    {
-      label: "Car Insurance",
-      value: "Car Insurance"
-    },
-    {
-      label: "Road Tax",
-      value: "Road Tax"
-    },
-    {
-      label: "Other",
-      value: "Other"
-    },
-  ]
+  useEffect(() => {
+    handleFetchCategories();
+  },[])
 
-  const checkCategory = type === "Earning" ? earningTypes : expenseTypes;
+  
   return (
     <SafeAreaView style={flexChild}>
+      <ScrollView>
         <CustomSpacer space={hp(2)} />
         <View style={{...flexChild, marginHorizontal: wp(6)}}>
           <Pressable onPress={handleBack} style={{...flexRow, ...centerVertical}}>
@@ -197,18 +267,40 @@ export const NewTransaction = () => {
           <CustomSpacer space={hp(4)} />
           <NewDropdown 
             handleChange={handleCategory}
-            items={checkCategory}
+            items={currentCategories}
             label='Category'
             value={category}
             viewStyle={{width: wp(70)}}
           />
-          <CustomSpacer space={hp(8)} />
+          <CustomSpacer space={hp(4)} />
+          <View style={{...flexRow, ...centerVertical }}>
+            <Switch 
+              label="Add New Category"
+              toggle={newCategory}
+              onPress={handleAddNewCategory} 
+              thumbStyleProp={{...circle(wp(4), colorWhite._1)}}
+              style={{width: wp(10), height: hp(3), borderRadius: wp(3)}}
+            />
+          </View>
+          <CustomSpacer space={hp(4)} />
+          {newCategory === true ? (
+            <>
+              <View style={{...flexRow, ...alignItemsEnd}}>
+                <CustomTextInput id="name" label='New Category' value={newCategoryValue} onChangeText={(value) => handleChange(value, "newCategoryValue")} viewStyle={{width: wp(50)}}/>
+                <CustomSpacer isHorizontal={true} space={wp(20)} />
+                <RoundedButton buttonStyle={{backgroundColor: colorBlue._1, borderColor: colorBlue._1}} onPress={handleAdd} text={'Add'} />
+              </View>  
+              <CustomSpacer space={hp(6)} />
+            </>
+          ): null}
           <View style={flexRowCC}>
             <RoundedButton buttonStyle={{backgroundColor: colorBlue._1, borderColor: colorBlue._1}} onPress={handleBack} text={'Cancel'} />
             <CustomSpacer isHorizontal={true} space={hp(4)} />
             <RoundedButton buttonStyle={{backgroundColor: colorBlue._1, borderColor: colorBlue._1}} onPress={handleSave} text={'Save'} />
           </View>
         </View>
+        <CustomSpacer space={hp(12)} />
+      </ScrollView>
     </SafeAreaView>
   )
 }

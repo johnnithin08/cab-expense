@@ -2,28 +2,20 @@
 /* eslint-disable */
 //  This file was automatically generated and should not be edited.
 
-export type CreateTransactionsInput = {
+export type CreateCategoriesInput = {
   id?: string | null,
   type: string,
-  category: string,
-  name: string,
-  description: string,
-  amount: string,
-  date: string,
+  categories?: Array< string > | null,
   userID: string,
 };
 
-export type ModelTransactionsConditionInput = {
+export type ModelCategoriesConditionInput = {
   type?: ModelStringInput | null,
-  category?: ModelStringInput | null,
-  name?: ModelStringInput | null,
-  description?: ModelStringInput | null,
-  amount?: ModelStringInput | null,
-  date?: ModelStringInput | null,
+  categories?: ModelStringInput | null,
   userID?: ModelIDInput | null,
-  and?: Array< ModelTransactionsConditionInput | null > | null,
-  or?: Array< ModelTransactionsConditionInput | null > | null,
-  not?: ModelTransactionsConditionInput | null,
+  and?: Array< ModelCategoriesConditionInput | null > | null,
+  or?: Array< ModelCategoriesConditionInput | null > | null,
+  not?: ModelCategoriesConditionInput | null,
 };
 
 export type ModelStringInput = {
@@ -82,6 +74,51 @@ export type ModelIDInput = {
   size?: ModelSizeInput | null,
 };
 
+export type Categories = {
+  __typename: "Categories",
+  id: string,
+  type: string,
+  categories?: Array< string > | null,
+  userID: string,
+  createdAt: string,
+  updatedAt: string,
+};
+
+export type UpdateCategoriesInput = {
+  id: string,
+  type?: string | null,
+  categories?: Array< string > | null,
+  userID?: string | null,
+};
+
+export type DeleteCategoriesInput = {
+  id: string,
+};
+
+export type CreateTransactionsInput = {
+  id?: string | null,
+  type: string,
+  category: string,
+  name: string,
+  description: string,
+  amount: string,
+  date: string,
+  userID: string,
+};
+
+export type ModelTransactionsConditionInput = {
+  type?: ModelStringInput | null,
+  category?: ModelStringInput | null,
+  name?: ModelStringInput | null,
+  description?: ModelStringInput | null,
+  amount?: ModelStringInput | null,
+  date?: ModelStringInput | null,
+  userID?: ModelIDInput | null,
+  and?: Array< ModelTransactionsConditionInput | null > | null,
+  or?: Array< ModelTransactionsConditionInput | null > | null,
+  not?: ModelTransactionsConditionInput | null,
+};
+
 export type Transactions = {
   __typename: "Transactions",
   id: string,
@@ -134,6 +171,7 @@ export type User = {
   email?: string | null,
   phoneNo?: string | null,
   transactions?: ModelTransactionsConnection | null,
+  categories?: ModelCategoriesConnection | null,
   createdAt: string,
   updatedAt: string,
 };
@@ -141,6 +179,12 @@ export type User = {
 export type ModelTransactionsConnection = {
   __typename: "ModelTransactionsConnection",
   items:  Array<Transactions | null >,
+  nextToken?: string | null,
+};
+
+export type ModelCategoriesConnection = {
+  __typename: "ModelCategoriesConnection",
+  items:  Array<Categories | null >,
   nextToken?: string | null,
 };
 
@@ -154,6 +198,22 @@ export type UpdateUserInput = {
 export type DeleteUserInput = {
   id: string,
 };
+
+export type ModelCategoriesFilterInput = {
+  id?: ModelIDInput | null,
+  type?: ModelStringInput | null,
+  categories?: ModelStringInput | null,
+  userID?: ModelIDInput | null,
+  and?: Array< ModelCategoriesFilterInput | null > | null,
+  or?: Array< ModelCategoriesFilterInput | null > | null,
+  not?: ModelCategoriesFilterInput | null,
+};
+
+export enum ModelSortDirection {
+  ASC = "ASC",
+  DESC = "DESC",
+}
+
 
 export type ModelTransactionsFilterInput = {
   id?: ModelIDInput | null,
@@ -179,12 +239,6 @@ export type ModelStringKeyConditionInput = {
   beginsWith?: string | null,
 };
 
-export enum ModelSortDirection {
-  ASC = "ASC",
-  DESC = "DESC",
-}
-
-
 export type ModelUserFilterInput = {
   id?: ModelIDInput | null,
   name?: ModelStringInput | null,
@@ -201,17 +255,13 @@ export type ModelUserConnection = {
   nextToken?: string | null,
 };
 
-export type ModelSubscriptionTransactionsFilterInput = {
+export type ModelSubscriptionCategoriesFilterInput = {
   id?: ModelSubscriptionIDInput | null,
   type?: ModelSubscriptionStringInput | null,
-  category?: ModelSubscriptionStringInput | null,
-  name?: ModelSubscriptionStringInput | null,
-  description?: ModelSubscriptionStringInput | null,
-  amount?: ModelSubscriptionStringInput | null,
-  date?: ModelSubscriptionStringInput | null,
+  categories?: ModelSubscriptionStringInput | null,
   userID?: ModelSubscriptionIDInput | null,
-  and?: Array< ModelSubscriptionTransactionsFilterInput | null > | null,
-  or?: Array< ModelSubscriptionTransactionsFilterInput | null > | null,
+  and?: Array< ModelSubscriptionCategoriesFilterInput | null > | null,
+  or?: Array< ModelSubscriptionCategoriesFilterInput | null > | null,
 };
 
 export type ModelSubscriptionIDInput = {
@@ -244,6 +294,19 @@ export type ModelSubscriptionStringInput = {
   notIn?: Array< string | null > | null,
 };
 
+export type ModelSubscriptionTransactionsFilterInput = {
+  id?: ModelSubscriptionIDInput | null,
+  type?: ModelSubscriptionStringInput | null,
+  category?: ModelSubscriptionStringInput | null,
+  name?: ModelSubscriptionStringInput | null,
+  description?: ModelSubscriptionStringInput | null,
+  amount?: ModelSubscriptionStringInput | null,
+  date?: ModelSubscriptionStringInput | null,
+  userID?: ModelSubscriptionIDInput | null,
+  and?: Array< ModelSubscriptionTransactionsFilterInput | null > | null,
+  or?: Array< ModelSubscriptionTransactionsFilterInput | null > | null,
+};
+
 export type ModelSubscriptionUserFilterInput = {
   id?: ModelSubscriptionIDInput | null,
   name?: ModelSubscriptionStringInput | null,
@@ -251,6 +314,57 @@ export type ModelSubscriptionUserFilterInput = {
   phoneNo?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionUserFilterInput | null > | null,
   or?: Array< ModelSubscriptionUserFilterInput | null > | null,
+};
+
+export type CreateCategoriesMutationVariables = {
+  input: CreateCategoriesInput,
+  condition?: ModelCategoriesConditionInput | null,
+};
+
+export type CreateCategoriesMutation = {
+  createCategories?:  {
+    __typename: "Categories",
+    id: string,
+    type: string,
+    categories?: Array< string > | null,
+    userID: string,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type UpdateCategoriesMutationVariables = {
+  input: UpdateCategoriesInput,
+  condition?: ModelCategoriesConditionInput | null,
+};
+
+export type UpdateCategoriesMutation = {
+  updateCategories?:  {
+    __typename: "Categories",
+    id: string,
+    type: string,
+    categories?: Array< string > | null,
+    userID: string,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type DeleteCategoriesMutationVariables = {
+  input: DeleteCategoriesInput,
+  condition?: ModelCategoriesConditionInput | null,
+};
+
+export type DeleteCategoriesMutation = {
+  deleteCategories?:  {
+    __typename: "Categories",
+    id: string,
+    type: string,
+    categories?: Array< string > | null,
+    userID: string,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
 };
 
 export type CreateTransactionsMutationVariables = {
@@ -345,6 +459,19 @@ export type CreateUserMutation = {
       } | null >,
       nextToken?: string | null,
     } | null,
+    categories?:  {
+      __typename: "ModelCategoriesConnection",
+      items:  Array< {
+        __typename: "Categories",
+        id: string,
+        type: string,
+        categories?: Array< string > | null,
+        userID: string,
+        createdAt: string,
+        updatedAt: string,
+      } | null >,
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -373,6 +500,19 @@ export type UpdateUserMutation = {
         description: string,
         amount: string,
         date: string,
+        userID: string,
+        createdAt: string,
+        updatedAt: string,
+      } | null >,
+      nextToken?: string | null,
+    } | null,
+    categories?:  {
+      __typename: "ModelCategoriesConnection",
+      items:  Array< {
+        __typename: "Categories",
+        id: string,
+        type: string,
+        categories?: Array< string > | null,
         userID: string,
         createdAt: string,
         updatedAt: string,
@@ -413,8 +553,83 @@ export type DeleteUserMutation = {
       } | null >,
       nextToken?: string | null,
     } | null,
+    categories?:  {
+      __typename: "ModelCategoriesConnection",
+      items:  Array< {
+        __typename: "Categories",
+        id: string,
+        type: string,
+        categories?: Array< string > | null,
+        userID: string,
+        createdAt: string,
+        updatedAt: string,
+      } | null >,
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
+  } | null,
+};
+
+export type GetCategoriesQueryVariables = {
+  id: string,
+};
+
+export type GetCategoriesQuery = {
+  getCategories?:  {
+    __typename: "Categories",
+    id: string,
+    type: string,
+    categories?: Array< string > | null,
+    userID: string,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type ListCategoriesQueryVariables = {
+  filter?: ModelCategoriesFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type ListCategoriesQuery = {
+  listCategories?:  {
+    __typename: "ModelCategoriesConnection",
+    items:  Array< {
+      __typename: "Categories",
+      id: string,
+      type: string,
+      categories?: Array< string > | null,
+      userID: string,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
+export type CategoriesByUserIDQueryVariables = {
+  userID: string,
+  sortDirection?: ModelSortDirection | null,
+  filter?: ModelCategoriesFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type CategoriesByUserIDQuery = {
+  categoriesByUserID?:  {
+    __typename: "ModelCategoriesConnection",
+    items:  Array< {
+      __typename: "Categories",
+      id: string,
+      type: string,
+      categories?: Array< string > | null,
+      userID: string,
+      createdAt: string,
+      updatedAt: string,
+    } | null >,
+    nextToken?: string | null,
   } | null,
 };
 
@@ -521,6 +736,19 @@ export type GetUserQuery = {
       } | null >,
       nextToken?: string | null,
     } | null,
+    categories?:  {
+      __typename: "ModelCategoriesConnection",
+      items:  Array< {
+        __typename: "Categories",
+        id: string,
+        type: string,
+        categories?: Array< string > | null,
+        userID: string,
+        createdAt: string,
+        updatedAt: string,
+      } | null >,
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -558,10 +786,71 @@ export type ListUsersQuery = {
         } | null >,
         nextToken?: string | null,
       } | null,
+      categories?:  {
+        __typename: "ModelCategoriesConnection",
+        items:  Array< {
+          __typename: "Categories",
+          id: string,
+          type: string,
+          categories?: Array< string > | null,
+          userID: string,
+          createdAt: string,
+          updatedAt: string,
+        } | null >,
+        nextToken?: string | null,
+      } | null,
       createdAt: string,
       updatedAt: string,
     } | null >,
     nextToken?: string | null,
+  } | null,
+};
+
+export type OnCreateCategoriesSubscriptionVariables = {
+  filter?: ModelSubscriptionCategoriesFilterInput | null,
+};
+
+export type OnCreateCategoriesSubscription = {
+  onCreateCategories?:  {
+    __typename: "Categories",
+    id: string,
+    type: string,
+    categories?: Array< string > | null,
+    userID: string,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnUpdateCategoriesSubscriptionVariables = {
+  filter?: ModelSubscriptionCategoriesFilterInput | null,
+};
+
+export type OnUpdateCategoriesSubscription = {
+  onUpdateCategories?:  {
+    __typename: "Categories",
+    id: string,
+    type: string,
+    categories?: Array< string > | null,
+    userID: string,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
+export type OnDeleteCategoriesSubscriptionVariables = {
+  filter?: ModelSubscriptionCategoriesFilterInput | null,
+};
+
+export type OnDeleteCategoriesSubscription = {
+  onDeleteCategories?:  {
+    __typename: "Categories",
+    id: string,
+    type: string,
+    categories?: Array< string > | null,
+    userID: string,
+    createdAt: string,
+    updatedAt: string,
   } | null,
 };
 
@@ -653,6 +942,19 @@ export type OnCreateUserSubscription = {
       } | null >,
       nextToken?: string | null,
     } | null,
+    categories?:  {
+      __typename: "ModelCategoriesConnection",
+      items:  Array< {
+        __typename: "Categories",
+        id: string,
+        type: string,
+        categories?: Array< string > | null,
+        userID: string,
+        createdAt: string,
+        updatedAt: string,
+      } | null >,
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -686,6 +988,19 @@ export type OnUpdateUserSubscription = {
       } | null >,
       nextToken?: string | null,
     } | null,
+    categories?:  {
+      __typename: "ModelCategoriesConnection",
+      items:  Array< {
+        __typename: "Categories",
+        id: string,
+        type: string,
+        categories?: Array< string > | null,
+        userID: string,
+        createdAt: string,
+        updatedAt: string,
+      } | null >,
+      nextToken?: string | null,
+    } | null,
     createdAt: string,
     updatedAt: string,
   } | null,
@@ -713,6 +1028,19 @@ export type OnDeleteUserSubscription = {
         description: string,
         amount: string,
         date: string,
+        userID: string,
+        createdAt: string,
+        updatedAt: string,
+      } | null >,
+      nextToken?: string | null,
+    } | null,
+    categories?:  {
+      __typename: "ModelCategoriesConnection",
+      items:  Array< {
+        __typename: "Categories",
+        id: string,
+        type: string,
+        categories?: Array< string > | null,
         userID: string,
         createdAt: string,
         updatedAt: string,
