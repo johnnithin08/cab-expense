@@ -105,7 +105,6 @@ export const Dashboard = () => {
             query: transactionsByUserIDAndDate,
             variables: { userID: currentUser.userId, date: { between: timeSlots[dateFilter]}}
           });
-        console.log("resp", response)
         const expenseTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
         const earningTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
         const transactionsToBeGrouped = activeTab === 0 ? expenseTransactions : earningTransactions

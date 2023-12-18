@@ -232,11 +232,14 @@ export const Transactions = () => {
                         const handleEdit = () => {
                             navigation.navigate("NewTransaction", { type: activeTab === 0 ? "Expense" : "Earning", mode: "edit", id: item.id})
                         }
+
+                        const defaultImage = activeTab === 0 ? LocalAssets.general : LocalAssets.money;
+                        const checkImage = transactionTypeImages[item.category] !== undefined ? transactionTypeImages[item.category] : defaultImage
                         return (
                             <>
                             {index !== 0 ? <CustomSpacer space={hp(2)} /> : null}
                             <Pressable onPress={handleEdit} style={itemContainer}>
-                                <Image source={transactionTypeImages[item.category]} style={imageStyle}/>
+                                <Image source={checkImage} style={imageStyle}/>
                                 <CustomSpacer isHorizontal={true} space={wp(2)} />
                                 <View>
                                     <LabeledTitle label={item.name} labelStyle={fs18BoldBlack2} title={item.category} titleStyle={fs14RegBlack2}/>
