@@ -44,16 +44,18 @@ export const listTransactions = /* GraphQL */ `
     }
   }
 `;
-export const transactionsByUserID = /* GraphQL */ `
-  query TransactionsByUserID(
+export const transactionsByUserIDAndDate = /* GraphQL */ `
+  query TransactionsByUserIDAndDate(
     $userID: ID!
+    $date: ModelStringKeyConditionInput
     $sortDirection: ModelSortDirection
     $filter: ModelTransactionsFilterInput
     $limit: Int
     $nextToken: String
   ) {
-    transactionsByUserID(
+    transactionsByUserIDAndDate(
       userID: $userID
+      date: $date
       sortDirection: $sortDirection
       filter: $filter
       limit: $limit

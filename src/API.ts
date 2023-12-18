@@ -169,6 +169,16 @@ export type ModelTransactionsFilterInput = {
   not?: ModelTransactionsFilterInput | null,
 };
 
+export type ModelStringKeyConditionInput = {
+  eq?: string | null,
+  le?: string | null,
+  lt?: string | null,
+  ge?: string | null,
+  gt?: string | null,
+  between?: Array< string | null > | null,
+  beginsWith?: string | null,
+};
+
 export enum ModelSortDirection {
   ASC = "ASC",
   DESC = "DESC",
@@ -454,16 +464,17 @@ export type ListTransactionsQuery = {
   } | null,
 };
 
-export type TransactionsByUserIDQueryVariables = {
+export type TransactionsByUserIDAndDateQueryVariables = {
   userID: string,
+  date?: ModelStringKeyConditionInput | null,
   sortDirection?: ModelSortDirection | null,
   filter?: ModelTransactionsFilterInput | null,
   limit?: number | null,
   nextToken?: string | null,
 };
 
-export type TransactionsByUserIDQuery = {
-  transactionsByUserID?:  {
+export type TransactionsByUserIDAndDateQuery = {
+  transactionsByUserIDAndDate?:  {
     __typename: "ModelTransactionsConnection",
     items:  Array< {
       __typename: "Transactions",

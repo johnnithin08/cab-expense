@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import { centerHV, centerHorizontal, centerVertical, colorBlue, colorGray, colorWhite, flexChild, flexRow, flexRowCC, flexWrap, fs14BoldBlack2, fs16BoldBlack2, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2, px, spaceBetweenHorizontal, spaceBetweenVertical } from '../../styles'
 import { CustomSpacer, SingleSelectPills, TabGroup, TabProps } from '../../components'
 import { generateClient } from 'aws-amplify/api';
-import { transactionsByUserID } from '../../graphql/queries';
+import { transactionsByUserID, transactionsByUserIDAndDate } from '../../graphql/queries';
 import { useIsFocused } from '@react-navigation/native';
 
 interface IGroupedTransactions {
@@ -102,13 +102,14 @@ export const Dashboard = () => {
      {
         const currentUser = await getCurrentUser();
         const response = await client.graphql({
-            query: transactionsByUserID,
-            variables: { userID: currentUser.userId, filter: {date: { between: timeSlots[dateFilter]}}}
+            query: transactionsByUserIDAndDate,
+            variables: { userID: currentUser.userId, date: { between: timeSlots[dateFilter]}}
           });
-        const expenseTransactions = response.data.transactionsByUserID.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
-        const earningTransactions = response.data.transactionsByUserID.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
+        console.log("resp", response)
+        const expenseTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
+        const earningTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
         const transactionsToBeGrouped = activeTab === 0 ? expenseTransactions : earningTransactions
-        setTransactions(response.data.transactionsByUserID.items)
+        setTransactions(response.data.transactionsByUserIDAndDate.items)
         groupByCategory(transactionsToBeGrouped)
      }
     catch(err)
@@ -192,7 +193,6 @@ export const Dashboard = () => {
   const totalEarnings = transactions.length > 0 ? transactions.filter((eachEarning: ITransactions) => eachEarning.type === "Earning").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
   const totalExpenses = transactions.length > 0 ? transactions.filter((eachEarning: ITransactions) => eachEarning.type === "Expense").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
   const netIncome = transactions.length > 0 ? totalEarnings - totalExpenses : 0;
-  console.log("tot", transactions, totalEarnings, totalExpenses, netIncome)
 
 
 return (
@@ -202,6 +202,7 @@ return (
       style={{
         margin: wp(15),
         marginBottom: 0,
+        marginTop: hp(6)
       }}>
       <View style={centerHV}>
         <Text style={{...fs24BoldBlack2, ...centerHV}}>

@@ -1,35 +1,54 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, SafeAreaView, FlatList, ViewStyle, ImageStyle, Image, Pressable } from 'react-native'
+import { View, Text, SafeAreaView, FlatList, ViewStyle, ImageStyle, Image, Pressable, ActivityIndicator } from 'react-native'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
 
-import { absolutePosition, border, centerHV, colorBlack, colorBlue, colorGray, colorTransparent, colorWhite, flexChild, flexRow, fs12BoldGray6, fs12RegBlack2, fs14BoldBlack2, fs14RegBlack2, fs16BoldBlack2, fs18BoldBlack2, fullWidth, justifyContentEnd, px, py, spaceBetweenHorizontal, sw1 } from '../../styles'
+import { absolutePosition, border, centerHV, colorBlack, colorBlue, colorGray, colorTransparent, colorWhite, flexChild, flexRow, fs12BoldGray6, fs12RegBlack2, fs14BoldBlack2, fs14RegBlack2, fs16BoldBlack2, fs18BoldBlack2, fs20BoldBlack2, fullWidth, justifyContentEnd, px, py, spaceBetweenHorizontal, sw1 } from '../../styles'
 import { CustomFlexSpacer, CustomSpacer, Icon, Icons, NewDatePicker, SingleSelectPills, TabGroup, TabProps } from '../../components';
 import { LabeledTitle } from '../../components/Views/LabeledTitle';
-import { transactionsByUserID } from '../../graphql/queries';
+import { transactionsByUserIDAndDate } from '../../graphql/queries';
 import { onCreateTransactions, onUpdateTransactions } from '../../graphql/subscriptions';
 import { AnimationUtils } from '../../utils';
 import { RoundedButton } from '../../components/Touchables';
+import { LocalAssets } from '../../assets/images/LocalAssets';
 
-type TCustomDate = {
+interface ICustomDate  {
     from?: Date;
     to?: Date;
+}
+
+interface ITotal {
+    totalIncome: number;
+    totalExpense: number;
 }
 
 
 
 export const Transactions = () => {
+    const [loading, setLoading] = useState<boolean>(false)
     const [dateFilter, setDateFilter] = useState<TDateFilter>("Daily")
-    const [customDate, setCustomDate] = useState<TCustomDate>({from: new Date, to: new Date})
+    const [customDate, setCustomDate] = useState<ICustomDate>({from: new Date, to: new Date})
     const [transactions, setTransactions] = useState<ITransactions[]>([])
+    const [total, setTotal] = useState<ITotal>({totalExpense: 0, totalIncome: 0})
     const [showFilter, setShowFilter] = useState<boolean>(false)
     const navigation = useNavigation()
     const [activeTab, setActiveTab] = useState<number>(0)
     const client = generateClient();
     const isFocused = useIsFocused();
+
+    const transactionTypeImages: TTransactionTypesObject = {
+        "Car Insurance" : LocalAssets.carInsurance,
+        "Fuel": LocalAssets.gas,
+        "Full Service" : LocalAssets.service,
+        "Other" : LocalAssets.general,
+        "RJ Card" : LocalAssets.card,
+        "RJ Cash" : LocalAssets.money,
+        "Road Tax" : LocalAssets.roadTax,
+        "Tips" : LocalAssets.tips,
+    }
 
     const timeSlots = {
         "Daily": [dayjs().startOf("day").toISOString(),dayjs().endOf("day").toISOString()],
@@ -67,6 +86,7 @@ export const Transactions = () => {
          }
         else
         {
+            setCustomDate({from: new Date, to: new Date})
             setShowFilter(false)
         }
         AnimationUtils.layout({duration: 500})
@@ -88,33 +108,33 @@ export const Transactions = () => {
     }
 
     const fetchTransactions = async (custom?: boolean) => {
+        setLoading(true)
         try 
          {
             const currentUser = await getCurrentUser();
-            const checkTimeFilter = custom === true || dateFilter === "Custom" ? [dayjs(customDate.from).toISOString(), dayjs(customDate.to).toISOString()] : timeSlots[dateFilter] 
+            const checkTimeFilter = custom === true || dateFilter === "Custom" ? [dayjs(customDate.from).startOf("day").toISOString(), dayjs(customDate.to).endOf("day").toISOString()] : timeSlots[dateFilter] 
             const response = await client.graphql({
-                query: transactionsByUserID,
-                variables: { userID: currentUser.userId, filter: { date: { between: checkTimeFilter} }}
+                query: transactionsByUserIDAndDate,
+                variables: { userID: currentUser.userId, date: { between: checkTimeFilter}, sortDirection: "DESC"}
               });
-            const expenseTransactions = response.data.transactionsByUserID.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
-            const earningTransactions = response.data.transactionsByUserID.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
+            const expenseTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
+            const earningTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
+            const totalEarnings = earningTransactions.length > 0 ? earningTransactions.filter((eachEarning: ITransactions) => eachEarning.type === "Earning").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
+            const totalExpenses = expenseTransactions.length > 0 ? expenseTransactions.filter((eachEarning: ITransactions) => eachEarning.type === "Expense").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
             const currentTransactions = activeTab === 0 ? expenseTransactions : earningTransactions
             setTransactions(currentTransactions)
+            setTotal({ totalExpense: totalExpenses, totalIncome: totalEarnings})
+            setLoading(false)
          }
         catch(err)
          {
+            setLoading(false)
             console.log("err", err)
          }
     }
 
     useEffect(() => {
         fetchTransactions();
-        const subscribeTransactions2 = client
-        .graphql({ query:  onCreateTransactions})
-        .subscribe({
-          next: ({ data }) => setTransactions([data.onCreateTransactions, ...transactions]),
-          error: (error) => console.warn(error)
-        });
     },[activeTab, dateFilter, isFocused])
 
     const dataFilterArray: IPillsWithSubLabel[] = [{ label: "Daily" }, { label: "This week" }, { label: "Custom" }]
@@ -149,6 +169,8 @@ export const Transactions = () => {
         borderRadius: wp(2),  
         paddingVertical: showFilter === true ? hp(2) : 0
     }
+
+    const netIncome = transactions.length > 0 ? total.totalIncome - total.totalExpense : 0;
   return (
     <SafeAreaView style={flexChild}>
         <View style={flexChild}>
@@ -197,6 +219,12 @@ export const Transactions = () => {
             <TabGroup activeTab={activeTab} setActiveTab={handleTabs} tabs={tabs} />
             <CustomSpacer space={hp(2)} />
             <View style={{...px(wp(4))}}>
+                {loading === true ? (
+                    <View style={{...centerHV, height: hp(61)}}>
+                        <ActivityIndicator size='large' />
+                    </View>    
+                ) : (
+
                 <FlatList 
                     data={transactions}
                     renderItem={({item, index}) => {
@@ -208,23 +236,33 @@ export const Transactions = () => {
                             <>
                             {index !== 0 ? <CustomSpacer space={hp(2)} /> : null}
                             <Pressable onPress={handleEdit} style={itemContainer}>
-                                <Image source={{uri: "https://img.freepik.com/free-vector/handle-pump-nozzle-with-gold-drop-expensive-fuel-gas-realistic-object-isolated-vector-illustration_1284-81457.jpg?w=1380&t=st=1701123749~exp=1701124349~hmac=a1f023bf723efb19c3b27597596eb6e24d36c97d242bae5a3192098e5df3eaca"}} style={imageStyle}/>
+                                <Image source={transactionTypeImages[item.category]} style={imageStyle}/>
                                 <CustomSpacer isHorizontal={true} space={wp(2)} />
-                                <LabeledTitle label={item.name} labelStyle={fs18BoldBlack2} title={item.category} titleStyle={fs14RegBlack2}/>
+                                <View>
+                                    <LabeledTitle label={item.name} labelStyle={fs18BoldBlack2} title={item.category} titleStyle={fs14RegBlack2}/>
+                                    <CustomSpacer space={wp(2)} />
+                                    <Text style={fs14RegBlack2}>{item.description}</Text>
+                                </View>
                                 <CustomFlexSpacer />
                                 <View style={endContainer}>
                                     <Text style={fs18BoldBlack2}>£{item.amount}</Text>
-                                    <Text style={fs14RegBlack2}>{dayjs(item.createdAt).format('DD/MM/YYYY')}</Text>
+                                    <Text style={fs14RegBlack2}>{dayjs(item.createdAt).format('hh:mm DD/MM/YYYY')}</Text>
                                 </View>    
                             </Pressable>  
-                            {index === transactions.length - 1 ? <CustomSpacer space={hp(30)} /> : null}  
+                            {index === transactions.length - 1 ? <CustomSpacer space={hp(10)} /> : null}  
                             </>
                         )
                     }}
+                    style={{height: hp(61)}}
                 />
+                )}
+            </View>
+            <View style={centerHV}>
+                <Text style={fs20BoldBlack2}>Total Earnings: £{total.totalIncome}</Text>
+                <Text style={fs20BoldBlack2}>Total Expenses: £{total.totalExpense}</Text>
+                <Text style={fs20BoldBlack2}>Net: £{netIncome}</Text>
             </View>
             <CustomSpacer space={hp(4)} />
-            
             <Pressable onPress={handleAdd} style={addButtonStyle}>
                 <Icon type={Icons.Ionicons} name="add" size={hp(4)} />
             </Pressable>

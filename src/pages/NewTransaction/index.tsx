@@ -149,6 +149,14 @@ export const NewTransaction = () => {
       value: "Full Service"
     },
     {
+      label: "Car Insurance",
+      value: "Car Insurance"
+    },
+    {
+      label: "Road Tax",
+      value: "Road Tax"
+    },
+    {
       label: "Other",
       value: "Other"
     },
