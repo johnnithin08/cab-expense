@@ -7,3 +7,8 @@ declare interface ITransactions {
     name: string;
     type: string;
 }
+
+
+type TTransactionTypes = "Fuel" | "Full Service" | "RJ Cash" | "RJ Card" | "Tips" | "Car Insurance" | "Road Tax" | "Other" 
+
+declare type TTransactionTypesObject = Record<TTransactionTypes, number>
