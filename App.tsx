@@ -19,6 +19,12 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react-native';
+import { Amplify } from 'aws-amplify';
+
+
+import awsExports from './src/aws-exports';
+Amplify.configure(awsExports);
 
 
 import {
@@ -30,6 +36,7 @@ import {
 } from 'react-native/Libraries/NewAppScreen';
 import { HomeNavigation } from './src/navigation/Home';
 import { flexChild } from './src/styles';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export const  App = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -39,16 +46,22 @@ export const  App = () => {
   };
 
   return (
-    <SafeAreaProvider>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={flexChild}>
-          <HomeNavigation />
-      </KeyboardAvoidingView>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={flexChild}>
+      <SafeAreaProvider>
+        <StatusBar
+          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+          backgroundColor={backgroundStyle.backgroundColor}
+        />
+        <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={flexChild}>
+          <Authenticator.Provider>
+            <Authenticator signUpAttributes={["name", "phone_number"]}>
+                <HomeNavigation />
+            </Authenticator>
+          </Authenticator.Provider>
+        </KeyboardAvoidingView>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
