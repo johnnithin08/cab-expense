@@ -2,6 +2,69 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
+export const getCategories = /* GraphQL */ `
+  query GetCategories($id: ID!) {
+    getCategories(id: $id) {
+      id
+      type
+      categories
+      userID
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const listCategories = /* GraphQL */ `
+  query ListCategories(
+    $filter: ModelCategoriesFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listCategories(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        type
+        categories
+        userID
+        createdAt
+        updatedAt
+        __typename
+      }
+      nextToken
+      __typename
+    }
+  }
+`;
+export const categoriesByUserID = /* GraphQL */ `
+  query CategoriesByUserID(
+    $userID: ID!
+    $sortDirection: ModelSortDirection
+    $filter: ModelCategoriesFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    categoriesByUserID(
+      userID: $userID
+      sortDirection: $sortDirection
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+    ) {
+      items {
+        id
+        type
+        categories
+        userID
+        createdAt
+        updatedAt
+        __typename
+      }
+      nextToken
+      __typename
+    }
+  }
+`;
 export const getTransactions = /* GraphQL */ `
   query GetTransactions($id: ID!) {
     getTransactions(id: $id) {
@@ -103,6 +166,19 @@ export const getUser = /* GraphQL */ `
         nextToken
         __typename
       }
+      categories {
+        items {
+          id
+          type
+          categories
+          userID
+          createdAt
+          updatedAt
+          __typename
+        }
+        nextToken
+        __typename
+      }
       createdAt
       updatedAt
       __typename
@@ -130,6 +206,19 @@ export const listUsers = /* GraphQL */ `
             description
             amount
             date
+            userID
+            createdAt
+            updatedAt
+            __typename
+          }
+          nextToken
+          __typename
+        }
+        categories {
+          items {
+            id
+            type
+            categories
             userID
             createdAt
             updatedAt
