@@ -9,7 +9,7 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
 
 import { CustomSpacer, Icon, Icons, NewDatePicker } from '../../components'
-import { alignItemsEnd, centerHV, centerHorizontal, centerVertical, circle, colorBlack, colorBlue, colorGray, colorWhite, flexChild, flexRow, flexRowCC, fs12BoldBlack2, fs12BoldGray6, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2 } from '../../styles';
+import { alignItemsEnd, centerHV, centerHorizontal, centerVertical, circle, colorBlack, colorBlue, colorGray, colorRed, colorWhite, flexChild, flexRow, flexRowCC, fs12BoldBlack2, fs12BoldGray6, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2 } from '../../styles';
 import { CustomTextInput } from '../../components/Input';
 import { NewDropdown } from '../../components/Dropdown';
 import { CustomButton } from '../../components/Touchables/Button';
@@ -78,6 +78,7 @@ const expenseTypes: TypeLabelValue[] = [
 export const NewTransaction = () => {
   const [categories, setCategories] = useState<ICategoryData | undefined>(undefined)
   const [transactionData, setTransactionData] = useState<ITransactonType>({name: "", date: new Date, description: "", category: "", newCategory: false, newCategoryValue: "", amount: ""})
+  const [amountError, setAmountError] = useState<boolean>(false)
   const {amount,category,date, description,name, newCategory, newCategoryValue } = transactionData 
   const navigation = useNavigation();
   const route = useRoute()
@@ -95,6 +96,11 @@ export const NewTransaction = () => {
   }
 
   const handleChange = (value: string, key: string ) => {
+      if(key === "amount")
+       {
+          const checkAmount = value.match(/^[0-9]+$/)
+          setAmountError(!checkAmount)
+       }
       setTransactionData({
         ...transactionData,
         [key]: value
@@ -231,6 +237,8 @@ export const NewTransaction = () => {
     handleFetchCategories();
   },[])
 
+  const disableSave = name === "" || description === "" || amount === "" || amountError === true || category === ""
+
   
   return (
     <SafeAreaView style={flexChild}>
@@ -254,6 +262,9 @@ export const NewTransaction = () => {
           />
           <CustomSpacer space={hp(4)} />
           <CustomTextInput id="name" label='Amount' value={amount} onChangeText={(value) => handleChange(value, "amount")} viewStyle={{width: wp(50)}}/>
+          {amountError === true ? (
+            <Text style={{...fs12BoldBlack2, color: colorRed._1, marginLeft: wp(1), marginTop: hp(1)}}>Please enter a proper amount</Text>
+            ): null}
           <CustomSpacer space={hp(4)} />
           <Text style={fs12BoldGray6}>Transaction Date</Text>
           <CustomSpacer space={hp(1)} />
@@ -296,7 +307,7 @@ export const NewTransaction = () => {
           <View style={flexRowCC}>
             <RoundedButton buttonStyle={{backgroundColor: colorBlue._1, borderColor: colorBlue._1}} onPress={handleBack} text={'Cancel'} />
             <CustomSpacer isHorizontal={true} space={hp(4)} />
-            <RoundedButton buttonStyle={{backgroundColor: colorBlue._1, borderColor: colorBlue._1}} onPress={handleSave} text={'Save'} />
+            <RoundedButton disabled={disableSave} buttonStyle={{backgroundColor: colorBlue._1, borderColor: colorBlue._1}} onPress={handleSave} text={'Save'} />
           </View>
         </View>
         <CustomSpacer space={hp(12)} />

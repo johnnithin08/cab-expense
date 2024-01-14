@@ -107,7 +107,8 @@ export const Dashboard = () => {
           });
         const expenseTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
         const earningTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
-        const transactionsToBeGrouped = activeTab === 0 ? expenseTransactions : earningTransactions
+        const transactionsToBeGrouped = activeTab === 0 ? expenseTransactions : earningTransactions;
+        console.log("tra", transactionsToBeGrouped)
         setTransactions(response.data.transactionsByUserIDAndDate.items)
         groupByCategory(transactionsToBeGrouped)
      }
