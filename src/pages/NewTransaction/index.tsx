@@ -246,7 +246,7 @@ export const NewTransaction = () => {
         <CustomSpacer space={hp(2)} />
         <View style={{...flexChild, marginHorizontal: wp(6)}}>
           <Pressable onPress={handleBack} style={{...flexRow, ...centerVertical}}>
-            <Icon type={Icons.Ionicons} name="arrow-back" color={colorBlack._2}/>
+            <Icon type={Icons.Ionicons} name="arrow-back" color={colorBlack._1}/>
             <CustomSpacer isHorizontal={true} space={wp(2)} />
             <Text style={fs20BoldBlack2}>Back</Text> 
           </Pressable>

@@ -267,7 +267,7 @@ export const Transactions = () => {
             </View>
             <CustomSpacer space={hp(4)} />
             <Pressable onPress={handleAdd} style={addButtonStyle}>
-                <Icon type={Icons.Ionicons} name="add" size={hp(4)} />
+                <Icon color={colorBlack._1} type={Icons.MaterialIcons} name="add" size={hp(4)} />
             </Pressable>
         </View>
     </SafeAreaView>

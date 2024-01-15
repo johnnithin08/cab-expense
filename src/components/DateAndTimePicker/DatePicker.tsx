@@ -193,8 +193,6 @@ export const NewDatePicker: FunctionComponent<NewDatePickerProps> = ({
     };
   }, []);
 
-  console.log("coll", collapsibleModal)
-
   return (
     <Fragment>
       <View ref={setRef} renderToHardwareTextureAndroid={true}>
