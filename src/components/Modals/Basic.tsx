@@ -36,6 +36,7 @@ export const BasicModal: FunctionComponent<IBasicModalProps> = ({
       animationOutTiming={animationOutTiming}
       isVisible={visible}
       onModalHide={handleClose}
+      onBackdropPress={handleClose}
       style={{ ...noMargin, ...style }}>
       {children}
     </Modal>
