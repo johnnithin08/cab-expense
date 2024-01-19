@@ -1,9 +1,10 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { Fragment, FunctionComponent, useEffect, useState } from "react";
-import { Keyboard, Text, TextStyle, TouchableWithoutFeedback, View, ViewStyle } from "react-native";
+import { Keyboard, Modal, Platform, Pressable, Text, TextStyle, TouchableWithoutFeedback, View, ViewStyle } from "react-native";
 import Collapsible from "react-native-collapsible";
 
 import {
+  centerHV,
   centerVertical,
   colorBlue,
   colorGray,
@@ -11,6 +12,8 @@ import {
   flexRow,
   fs16BoldBlue1,
   fullHW,
+  fullHeight,
+  fullWidth,
   noBGColor,
   px,
   sh228,
@@ -19,6 +22,7 @@ import {
   sw15,
   sw16,
   sw2,
+  sw20,
   sw24,
   sw356,
   sw360,
@@ -92,9 +96,14 @@ export const NewDatePicker: FunctionComponent<NewDatePickerProps> = ({
    * 1. Absolute position is wrong when keyboard is open (quick solution, pass keyboardAvoidingRef)
    */
 
-  const handleDateChange = (_event: Event, date?: Date) => {
-    if (date !== undefined) {
+  const handleDateChange = (event: Event, date?: Date) => {
+    if(event.type === "dismissed" || event.type === "set")
+     {
+      setCollapsibleModal(false)
+     }
+    if (date !== undefined && event.type === "set") {
       setSelectedDate(date);
+      setValue(date);
     }
   };
 
@@ -154,7 +163,6 @@ export const NewDatePicker: FunctionComponent<NewDatePickerProps> = ({
   };
 
   const placeholderStyle: TextStyle = selectedValue !== "" ? {} : { color: colorGray._4, fontFamily: NunitoRegular };
-  const pickerStyle: ViewStyle = { height: sh228, ...datePickerStyle };
 
   const defaultButtonStyle: ViewStyle = {
     backgroundColor: colorBlue._1,
@@ -171,6 +179,10 @@ export const NewDatePicker: FunctionComponent<NewDatePickerProps> = ({
   const handleKeyboardHide = () => {
     setKeyboardVisible(false);
   };
+
+  const handleClose = () => {
+    setCollapsibleModal(false)
+  }
 
   useEffect(() => {
     const keyboardDidShow = Keyboard.addListener("keyboardDidShow", handleKeyboardDidShow);
@@ -197,7 +209,47 @@ export const NewDatePicker: FunctionComponent<NewDatePickerProps> = ({
           </View>
         </TouchableWithoutFeedback>
       </View>
-      <BasicModal animationOutTiming={80} visible={collapsibleModal} hasBackdrop={false}>
+      {Platform.OS === "ios" ? (
+      <BasicModal visible={collapsibleModal} hasBackdrop={true} onClose={handleClose}>
+                    <Pressable onPress={handleClose} style={{...centerHV, ...fullWidth, ...fullHeight, }}>
+                    
+                    <View style={{ maxHeight: 400, backgroundColor: colorWhite._1, borderRadius: sw12, padding: sw20}}>
+                    <DateTimePicker
+                      // androidVariant="nativeAndroid"
+                      display="inline"
+                      is24Hour={true}
+                      maximumDate={maximumDate}
+                      minimumDate={minimumDate}
+                      mode={"date"}
+                      onChange={handleDateChange}
+                      textColor="black"
+                      accessibilityViewIsModal={true}
+                      value={selectedDate}
+                    />
+
+                    </View>
+
+                  </Pressable>
+      </BasicModal>
+      ): (
+        <>
+        {collapsibleModal === true ? (
+
+          <DateTimePicker
+                        display="default"
+                        is24Hour={true}
+                        maximumDate={maximumDate}
+                        minimumDate={minimumDate}
+                        mode={"date"}
+                        onChange={handleDateChange}
+                        textColor="black"
+                        accessibilityViewIsModal={true}
+                        value={selectedDate}
+                      />
+        ): null}
+        </>
+      )}
+      {/* <BasicModal animationOutTiming={80} visible={collapsibleModal} hasBackdrop={false}>
         <TouchableWithoutFeedback onPress={handleBackdropPress}>
           <View style={fullHW}>
             <View style={dropdownContainer}>
@@ -207,19 +259,22 @@ export const NewDatePicker: FunctionComponent<NewDatePickerProps> = ({
               </View>
               <Collapsible duration={100} collapsed={collapse} style={noBGColor}>
                 <View style={{ borderTopWidth: sw2, borderTopColor: colorBlue._1 }}>
-                  <View style={pickerStyle}>
+                  <View style={pickerStyle}> */}
+                  {/* {collapsibleModal ?
                     <DateTimePicker
-                      display="spinner"
+                      // androidVariant="nativeAndroid"
+                      display="calendar"
                       is24Hour={true}
                       maximumDate={maximumDate}
                       minimumDate={minimumDate}
-                      mode={mode}
+                      mode={"date"}
                       onChange={handleDateChange}
                       style={pickerStyle}
                       textColor="black"
                       value={selectedDate}
                     />
-                  </View>
+                  : null} */}
+                  {/* </View>
                   <View style={{ backgroundColor: colorBlue._1, borderBottomRightRadius: sw12, borderBottomLeftRadius: sw12 }}>
                     <CustomButton
                       buttonStyle={defaultButtonStyle}
@@ -232,7 +287,7 @@ export const NewDatePicker: FunctionComponent<NewDatePickerProps> = ({
             </View>
           </View>
         </TouchableWithoutFeedback>
-      </BasicModal>
+      </BasicModal> */}
     </Fragment>
   );
 };

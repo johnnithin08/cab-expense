@@ -73,7 +73,7 @@ export const Profile = () => {
       </View>
       <CustomSpacer space={hp(20)} />
       <View style={centerHV}>
-      <RoundedButton buttonStyle={{backgroundColor: colorBlue._1}} text="Logout" onPress={handleLogout} />
+      <RoundedButton buttonStyle={{backgroundColor: colorBlue._1, borderColor: colorBlue._1}} text="Logout" onPress={handleLogout} />
       </View>
     </View>
     </View>

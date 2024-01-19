@@ -107,7 +107,7 @@ export const Dashboard = () => {
           });
         const expenseTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
         const earningTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
-        const transactionsToBeGrouped = activeTab === 0 ? expenseTransactions : earningTransactions
+        const transactionsToBeGrouped = activeTab === 0 ? expenseTransactions : earningTransactions;
         setTransactions(response.data.transactionsByUserIDAndDate.items)
         groupByCategory(transactionsToBeGrouped)
      }
@@ -189,8 +189,10 @@ export const Dashboard = () => {
     borderRadius: wp(5),
   }
 
-  const totalEarnings = transactions.length > 0 ? transactions.filter((eachEarning: ITransactions) => eachEarning.type === "Earning").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
-  const totalExpenses = transactions.length > 0 ? transactions.filter((eachEarning: ITransactions) => eachEarning.type === "Expense").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
+  const earningsArray = transactions.length > 0 ? transactions.filter((eachEarning: ITransactions) => eachEarning.type === "Earning") : []
+  const expenseArray = transactions.length > 0 ? transactions.filter((eachEarning: ITransactions) => eachEarning.type === "Expense") : []
+  const totalEarnings = earningsArray.length > 0 ? earningsArray.map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
+  const totalExpenses = expenseArray.length > 0 ? expenseArray.map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
   const netIncome = transactions.length > 0 ? totalEarnings - totalExpenses : 0;
 
 
