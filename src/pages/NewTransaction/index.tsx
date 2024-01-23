@@ -17,6 +17,7 @@ import { RoundedButton } from '../../components/Touchables';
 import { createCategories, createTransactions, updateCategories, updateTransactions } from '../../graphql/mutations';
 import { categoriesByUserID, getTransactions } from '../../graphql/queries';
 import { Switch } from '../../components/Switch/Switch';
+import { formatAmount, isAmount, parseAmount } from '../../utils';
 
 
 interface ITransactonType  {
@@ -78,7 +79,6 @@ const expenseTypes: TypeLabelValue[] = [
 export const NewTransaction = () => {
   const [categories, setCategories] = useState<ICategoryData | undefined>(undefined)
   const [transactionData, setTransactionData] = useState<ITransactonType>({name: "", date: new Date, description: "", category: "", newCategory: false, newCategoryValue: "", amount: ""})
-  const [amountError, setAmountError] = useState<boolean>(false)
   const {amount,category,date, description,name, newCategory, newCategoryValue } = transactionData 
   const navigation = useNavigation();
   const route = useRoute()
@@ -96,11 +96,6 @@ export const NewTransaction = () => {
   }
 
   const handleChange = (value: string, key: string ) => {
-      if(key === "amount")
-       {
-          const checkAmount = value.match(/^[0-9]+$/)
-          setAmountError(!checkAmount)
-       }
       setTransactionData({
         ...transactionData,
         [key]: value
@@ -126,7 +121,7 @@ export const NewTransaction = () => {
        const currentUser = await getCurrentUser();
        const response = await client.graphql({
          query: createTransactions,
-         variables: { input: { amount: amount, category: category, date: dayjs(date).toDate(), description: description, name: name, type: type,userID: currentUser.userId} }
+         variables: { input: { amount: formatAmount(amount), category: category, date: dayjs(date).toDate(), description: description, name: name, type: type,userID: currentUser.userId} }
        });
        navigation.navigate("Transactions");
      }
@@ -141,7 +136,7 @@ export const NewTransaction = () => {
      {
        const response = await client.graphql({
          query: updateTransactions,
-         variables: { input: { id: id, amount: amount, category: category, date: dayjs(date).toDate(), description: description, name: name, type: type} }
+         variables: { input: { id: id, amount: formatAmount(amount), category: category, date: dayjs(date).toDate(), description: description, name: name, type: type} }
        });
        navigation.navigate("Transactions");
      }
@@ -160,6 +155,10 @@ export const NewTransaction = () => {
      {
         handleEditData();
      }
+  }
+
+  const handleFormat = (_e) => {
+      setTransactionData({...transactionData, amount: formatAmount(transactionData.amount)})
   }
 
   const handleAdd = async () => {
@@ -237,7 +236,7 @@ export const NewTransaction = () => {
     handleFetchCategories();
   },[])
 
-  const disableSave = name === "" || description === "" || amount === "" || amountError === true || category === ""
+  const disableSave =  amount === ""  || category === "";
 
   
   return (
@@ -251,8 +250,6 @@ export const NewTransaction = () => {
             <Text style={fs20BoldBlack2}>Back</Text> 
           </Pressable>
           <CustomSpacer space={hp(4)} />
-          <CustomTextInput id="name" label='Name' value={name} onChangeText={(value) => handleChange(value, "name")} viewStyle={{width: wp(50)}}/>
-          <CustomSpacer space={hp(4)} />
           <CustomTextInput 
             id="name" 
             label='Description' 
@@ -261,10 +258,7 @@ export const NewTransaction = () => {
             viewStyle={{width: wp(50)}}
           />
           <CustomSpacer space={hp(4)} />
-          <CustomTextInput id="name" label='Amount' value={amount} onChangeText={(value) => handleChange(value, "amount")} viewStyle={{width: wp(50)}}/>
-          {amountError === true ? (
-            <Text style={{...fs12BoldBlack2, color: colorRed._1, marginLeft: wp(1), marginTop: hp(1)}}>Please enter a proper amount</Text>
-            ): null}
+          <CustomTextInput id="name" label='Amount' value={amount} onBlur={handleFormat} onChangeText={(value) => handleChange(value, "amount")} viewStyle={{width: wp(50)}}/>
           <CustomSpacer space={hp(4)} />
           <Text style={fs12BoldGray6}>Transaction Date</Text>
           <CustomSpacer space={hp(1)} />

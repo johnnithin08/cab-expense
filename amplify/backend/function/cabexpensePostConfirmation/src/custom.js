@@ -23,7 +23,6 @@ exports.handler = async (event) => {
     createdAt: { S: now.toISOString() },
     updatedAt: { S: now.toISOString() },
     id: { S: event?.request?.userAttributes.sub },
-    phoneNo: { S: event?.request?.userAttributes.phone_number },
     name: { S: event?.request?.userAttributes.name },
     email: { S: event?.request?.userAttributes.email },
   }

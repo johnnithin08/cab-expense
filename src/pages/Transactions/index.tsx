@@ -11,7 +11,7 @@ import { CustomFlexSpacer, CustomSpacer, Icon, Icons, NewDatePicker, SingleSelec
 import { LabeledTitle } from '../../components/Views/LabeledTitle';
 import { transactionsByUserIDAndDate } from '../../graphql/queries';
 import { onCreateTransactions, onUpdateTransactions } from '../../graphql/subscriptions';
-import { AnimationUtils } from '../../utils';
+import { AnimationUtils, parseAmount } from '../../utils';
 import { RoundedButton } from '../../components/Touchables';
 import { LocalAssets } from '../../assets/images/LocalAssets';
 
@@ -119,8 +119,8 @@ export const Transactions = () => {
               });
             const expenseTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
             const earningTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
-            const totalEarnings = earningTransactions.length > 0 ? earningTransactions.filter((eachEarning: ITransactions) => eachEarning.type === "Earning").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
-            const totalExpenses = expenseTransactions.length > 0 ? expenseTransactions.filter((eachEarning: ITransactions) => eachEarning.type === "Expense").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
+            const totalEarnings = earningTransactions.length > 0 ? earningTransactions.filter((eachEarning: ITransactions) => eachEarning.type === "Earning").map((typedTransaction: ITransactions) => parseAmount(typedTransaction.amount)).reduce((total, current) => total + current) : 0;
+            const totalExpenses = expenseTransactions.length > 0 ? expenseTransactions.filter((eachEarning: ITransactions) => eachEarning.type === "Expense").map((typedTransaction: ITransactions) => parseAmount(typedTransaction.amount)).reduce((total, current) => total + current) : 0
             const currentTransactions = activeTab === 0 ? expenseTransactions : earningTransactions
             setTransactions(currentTransactions)
             setTotal({ totalExpense: totalExpenses, totalIncome: totalEarnings})
@@ -242,9 +242,9 @@ export const Transactions = () => {
                                 <Image source={checkImage} style={imageStyle}/>
                                 <CustomSpacer isHorizontal={true} space={wp(2)} />
                                 <View>
-                                    <LabeledTitle label={item.name} labelStyle={fs18BoldBlack2} title={item.category} titleStyle={fs14RegBlack2}/>
+                                    <Text style={fs18BoldBlack2}>{item.description}</Text>
                                     <CustomSpacer space={wp(2)} />
-                                    <Text style={fs14RegBlack2}>{item.description}</Text>
+                                    <Text style={fs14RegBlack2}>{item.category}</Text>
                                 </View>
                                 <CustomFlexSpacer />
                                 <View style={endContainer}>
@@ -261,9 +261,9 @@ export const Transactions = () => {
                 )}
             </View>
             <View style={centerHV}>
-                <Text style={fs20BoldBlack2}>Total Earnings: £{total.totalIncome}</Text>
-                <Text style={fs20BoldBlack2}>Total Expenses: £{total.totalExpense}</Text>
-                <Text style={fs20BoldBlack2}>Net: £{netIncome}</Text>
+                <Text style={fs20BoldBlack2}>Total Earnings: £{parseFloat(total.totalIncome).toFixed(2)}</Text>
+                <Text style={fs20BoldBlack2}>Total Expenses: £{parseFloat(total.totalExpense).toFixed(2)}</Text>
+                <Text style={fs20BoldBlack2}>Net: £{parseFloat(netIncome).toFixed(2)}</Text>
             </View>
             <CustomSpacer space={hp(4)} />
             <Pressable onPress={handleAdd} style={addButtonStyle}>
