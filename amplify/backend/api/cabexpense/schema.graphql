@@ -9,8 +9,8 @@ type Transactions @model @auth(rules: [{allow: public}]) {
   id: ID!
   type: String!
   category: String!
-  name: String!
-  description: String!
+  name: String
+  description: String
   amount: String!
   date: AWSDateTime!
   userID: ID! @index(name: "byUser", sortKeyFields: ["date"])

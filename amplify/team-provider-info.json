@@ -19,7 +19,7 @@
       "function": {
         "cabexpensePostConfirmation": {
           "deploymentBucketName": "amplify-cabexpense-staging-194331-deployment",
-          "s3Key": "amplify-builds/cabexpensePostConfirmation-31316145697778683468-build.zip"
+          "s3Key": "amplify-builds/cabexpensePostConfirmation-6178625a506e45416c32-build.zip"
         }
       },
       "api": {

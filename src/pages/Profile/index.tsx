@@ -66,11 +66,15 @@ export const Profile = () => {
         <Text style={fs20BoldBlack2}>Email:</Text>
         <Text style={fs20BoldBlack2}>{userDetails.email}</Text>
       </View>
+      {userDetails.phoneNo !== null ? (
+        <>
       <CustomSpacer space={hp(2)} />
       <View style={{...flexRow,...spaceBetweenHorizontal}}>
         <Text style={fs20BoldBlack2}>Phone No:</Text>
         <Text style={fs20BoldBlack2}>{userDetails.phoneNo}</Text>
       </View>
+        </>  
+      ): null}
       <CustomSpacer space={hp(20)} />
       <View style={centerHV}>
       <RoundedButton buttonStyle={{backgroundColor: colorBlue._1, borderColor: colorBlue._1}} text="Logout" onPress={handleLogout} />
