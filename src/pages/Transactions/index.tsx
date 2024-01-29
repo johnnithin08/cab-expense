@@ -112,7 +112,8 @@ export const Transactions = () => {
         try 
          {
             const currentUser = await getCurrentUser();
-            const checkTimeFilter = custom === true || dateFilter === "Custom" ? [dayjs(customDate.from).startOf("day").toISOString(), dayjs(customDate.to).endOf("day").toISOString()] : timeSlots[dateFilter] 
+            const checkTimeFilter = custom === true || dateFilter === "Custom" ? [dayjs(customDate.from).startOf("day").toISOString(), dayjs(customDate.to).endOf("day").toISOString()] : timeSlots[dateFilter]
+            console.log("check", checkTimeFilter) 
             const response = await client.graphql({
                 query: transactionsByUserIDAndDate,
                 variables: { userID: currentUser.userId, date: { between: checkTimeFilter}, sortDirection: "DESC"}
@@ -249,7 +250,7 @@ export const Transactions = () => {
                                 <CustomFlexSpacer />
                                 <View style={endContainer}>
                                     <Text style={fs18BoldBlack2}>£{item.amount}</Text>
-                                    <Text style={fs14RegBlack2}>{dayjs(item.createdAt).format('hh:mm DD/MM/YYYY')}</Text>
+                                    <Text style={fs14RegBlack2}>{dayjs(item.date).format('hh:mm DD/MM/YYYY')}</Text>
                                 </View>    
                             </Pressable>  
                             {index === transactions.length - 1 ? <CustomSpacer space={hp(10)} /> : null}  

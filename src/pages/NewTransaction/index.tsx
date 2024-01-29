@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, Pressable, NativeSyntheticEvent, TextInputChangeEventData, Button } from 'react-native'
+import { View, Text, Pressable, NativeSyntheticEvent, TextInputChangeEventData, Button, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -8,16 +8,18 @@ import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
 
-import { CustomSpacer, Icon, Icons, NewDatePicker } from '../../components'
-import { alignItemsEnd, centerHV, centerHorizontal, centerVertical, circle, colorBlack, colorBlue, colorGray, colorRed, colorWhite, flexChild, flexRow, flexRowCC, fs12BoldBlack2, fs12BoldGray6, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2 } from '../../styles';
+import { CustomFlexSpacer, CustomSpacer, Icon, Icons, NewDatePicker } from '../../components'
+import { alignItemsEnd, centerHV, centerHorizontal, centerVertical, circle, colorBlack, colorBlue, colorGray, colorGreen, colorRed, colorWhite, flexChild, flexRow, flexRowCC, fs12BoldBlack2, fs12BoldGray6, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2 } from '../../styles';
 import { CustomTextInput } from '../../components/Input';
 import { NewDropdown } from '../../components/Dropdown';
 import { CustomButton } from '../../components/Touchables/Button';
 import { RoundedButton } from '../../components/Touchables';
-import { createCategories, createTransactions, updateCategories, updateTransactions } from '../../graphql/mutations';
+import { createCategories, createTransactions, deleteCategories, deleteTransactions, updateCategories, updateTransactions } from '../../graphql/mutations';
 import { categoriesByUserID, getTransactions } from '../../graphql/queries';
 import { Switch } from '../../components/Switch/Switch';
 import { formatAmount, isAmount, parseAmount } from '../../utils';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import Feather from 'react-native-vector-icons/Feather';
 
 
 interface ITransactonType  {
@@ -79,6 +81,8 @@ const expenseTypes: TypeLabelValue[] = [
 export const NewTransaction = () => {
   const [categories, setCategories] = useState<ICategoryData | undefined>(undefined)
   const [transactionData, setTransactionData] = useState<ITransactonType>({name: "", date: new Date, description: "", category: "", newCategory: false, newCategoryValue: "", amount: ""})
+  const [editCategory, setEditCategory] = useState<boolean>(false);
+  const [editedCategory, setEditedCategory] = useState<string>("")
   const {amount,category,date, description,name, newCategory, newCategoryValue } = transactionData 
   const navigation = useNavigation();
   const route = useRoute()
@@ -160,12 +164,26 @@ export const NewTransaction = () => {
   const handleFormat = (_e) => {
       setTransactionData({...transactionData, amount: formatAmount(transactionData.amount)})
   }
+  const handleDelete = async () => {
+    try
+     {
+      const response = await client.graphql({
+        query: deleteTransactions,
+        variables: { input: { id: id } }
+      });
+      navigation.navigate("Transactions");
+     }
+    catch(err)
+     {
+        Alert.alert(err.message)
+     }
+  }
 
   const handleAdd = async () => {
     try
      {
         const currentUser = await getCurrentUser();
-        const currentCategoryLabels = currentCategories.map((eachCategory) => eachCategory.label)
+        const currentCategoryLabels = currentCategories.filter((eachCategory) => eachCategory.label !== "").map((eachCategory) => eachCategory.label)
         if(categories !== undefined)
          {
           await client.graphql({
@@ -181,7 +199,7 @@ export const NewTransaction = () => {
             variables: { input: {userID: currentUser.userId, type: type, categories: [...currentCategoryLabels, newCategoryValue]}}
           })
          }
-        setTransactionData({...transactionData, newCategory: false})
+        setTransactionData({...transactionData, newCategory: false, newCategoryValue: ""})
         handleFetchCategories()
      }
     catch(err)
@@ -225,6 +243,55 @@ export const NewTransaction = () => {
       }
   }
 
+  const handleEditCategory = () => {
+    setEditedCategory(category)
+    setEditCategory(!editCategory)
+  }
+
+  const handleCategoryChange = (value: string) => {
+    setEditedCategory(value)
+  }
+
+  const handleSaveEdit = async () => {
+    const findIndex = categories!.categories.findIndex((eachCategory) => eachCategory ===  category);
+    const updatedCategories = [...categories?.categories]
+    updatedCategories[findIndex] = editedCategory
+    try
+     {
+      const response = await client.graphql({
+        query: updateCategories,
+        variables: { input: { id: categories?.id, categories: updatedCategories } }
+      });
+      setEditCategory(false)
+      handleFetchCategories();
+      setTransactionData({...transactionData, category: ""})
+     }
+    catch(err)
+     {
+        console.log("err", err)
+        Alert.alert(err.message)
+     }
+  }
+
+  const handleDeleteCategory = async () => {
+    const filteredCategories = categories!.categories.filter((eachCategory) => eachCategory !==  category);
+    try
+     {
+      const response = await client.graphql({
+        query: updateCategories,
+        variables: { input: { id: categories?.id, categories: filteredCategories } }
+      });
+      setEditCategory(false)
+      handleFetchCategories();
+      setTransactionData({...transactionData, category: ""})
+     }
+    catch(err)
+     {
+        console.log("err", err)
+        Alert.alert(err.message)
+     }
+  }
+
   useEffect(() => {
     if(id)
      {
@@ -244,11 +311,21 @@ export const NewTransaction = () => {
       <ScrollView>
         <CustomSpacer space={hp(2)} />
         <View style={{...flexChild, marginHorizontal: wp(6)}}>
-          <Pressable onPress={handleBack} style={{...flexRow, ...centerVertical}}>
-            <Icon type={Icons.Ionicons} name="arrow-back" color={colorBlack._1}/>
-            <CustomSpacer isHorizontal={true} space={wp(2)} />
-            <Text style={fs20BoldBlack2}>Back</Text> 
-          </Pressable>
+          <View style={flexRow}>
+            <Pressable onPress={handleBack} style={{...flexRow, ...centerVertical}}>
+              <Icon type={Icons.Ionicons} name="arrow-back" color={colorBlack._1}/>
+              <CustomSpacer isHorizontal={true} space={wp(2)} />
+              <Text style={fs20BoldBlack2}>Back</Text> 
+            </Pressable>
+            {id ? (
+              <>
+            <CustomFlexSpacer />
+            <Pressable onPress={handleDelete}>
+              <AntDesign color={colorRed._1} name="delete" size={hp(3.5)} />
+            </Pressable>
+              </>  
+            ): null}
+          </View>
           <CustomSpacer space={hp(4)} />
           <CustomTextInput 
             id="name" 
@@ -264,19 +341,42 @@ export const NewTransaction = () => {
           <CustomSpacer space={hp(1)} />
           <NewDatePicker 
             datePickerStyle={{width: wp(70)}}
-            viewStyle={{width: wp(70)}}
+            viewStyle={{width: wp(50)}}
             mode={"date"} 
             value={date}
             setValue={handleDateChange}            
           /> 
           <CustomSpacer space={hp(4)} />
-          <NewDropdown 
-            handleChange={handleCategory}
-            items={currentCategories}
-            label='Category'
-            value={category}
-            viewStyle={{width: wp(70)}}
-          />
+          <View style={{...flexRow, ...alignItemsEnd}}>
+            <NewDropdown 
+              disabled={editCategory === true}
+              handleChange={handleCategory}
+              items={currentCategories}
+              label='Category'
+              value={category}
+              viewStyle={{width: wp(50)}}
+            />
+            {categories !== undefined && category !== "" && editCategory === false ? (
+              <>
+              <CustomSpacer isHorizontal={true} space={wp(20)} />
+              <RoundedButton buttonStyle={{backgroundColor: colorBlue._1, borderColor: colorBlue._1}} onPress={handleEditCategory} text={'Edit'} />
+              </>
+            ): null}
+          </View>
+          {editCategory === true ? (
+            <>
+            <CustomSpacer space={hp(4)} />
+              <View style={{...flexRow, ...alignItemsEnd}}>
+                <CustomTextInput id="name" label='Selected Category' value={editedCategory} onChangeText={handleCategoryChange} viewStyle={{width: wp(50)}}/>
+                <CustomSpacer isHorizontal={true} space={wp(20)} />
+                <View style={{...flexRow, marginBottom: hp(1)}}>
+                  <Feather color={colorGreen._1} name="check-circle" onPress={handleSaveEdit} size={hp(3.5)} />
+                  <CustomSpacer isHorizontal={true} space={wp(10)} />
+                  <AntDesign onPress={handleDeleteCategory} color={colorRed._1} name="delete" size={hp(3.5)} />
+                </View>
+              </View>  
+            </>
+          ): null}
           <CustomSpacer space={hp(4)} />
           <View style={{...flexRow, ...centerVertical }}>
             <Switch 
