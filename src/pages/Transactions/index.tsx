@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, SafeAreaView, FlatList, ViewStyle, ImageStyle, Image, Pressable, ActivityIndicator, PermissionsAndroid, Platform, Alert } from 'react-native'
+import { View, Text, FlatList, ViewStyle, ImageStyle, Image, Pressable, ActivityIndicator, PermissionsAndroid, Platform, Alert } from 'react-native'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
@@ -7,6 +7,7 @@ import { useIsFocused, useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import RNFS from 'react-native-fs';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { absolutePosition, border, centerHV, colorBlack, colorBlue, colorGray, colorTransparent, colorWhite, flexChild, flexRow, fs12BoldGray6, fs12RegBlack2, fs14BoldBlack2, fs14RegBlack2, fs16BoldBlack2, fs18BoldBlack2, fs20BoldBlack2, fullWidth, justifyContentEnd, px, py, spaceBetweenHorizontal, sw1 } from '../../styles'
 import { CustomFlexSpacer, CustomSpacer, Icon, Icons, NewDatePicker, SingleSelectPills, TabGroup, TabProps } from '../../components';
@@ -41,6 +42,7 @@ export const Transactions = () => {
     const [activeTab, setActiveTab] = useState<number>(0)
     const client = generateClient();
     const isFocused = useIsFocused();
+    const {bottom} = useSafeAreaInsets()
 
     const transactionTypeImages: TTransactionTypesObject = {
         "Car Insurance" : LocalAssets.carInsurance,
@@ -206,7 +208,7 @@ export const Transactions = () => {
             const checkTimeFilter = custom === true || dateFilter === "Custom" ? [dayjs(customDate.from).startOf("day").toISOString(), dayjs(customDate.to).endOf("day").toISOString()] : timeSlots[dateFilter] 
             const response = await client.graphql({
                 query: transactionsByUserIDAndDate,
-                variables: { userID: currentUser.userId, date: { between: checkTimeFilter}, sortDirection: "DESC"}
+                variables: { userID: currentUser.userId, date: { between: checkTimeFilter}, sortDirection: "DESC", limit: 100000}
               });
             const expenseTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
             const earningTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
@@ -361,7 +363,7 @@ export const Transactions = () => {
                                 </>
                             )
                         }}
-                        style={{height: hp(61)}}
+                        style={{height: bottom === 0 ? hp(61) : hp(58)}}
                     />
                 </>
                 )}
