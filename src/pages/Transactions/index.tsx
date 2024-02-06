@@ -118,7 +118,7 @@ export const Transactions = () => {
             const checkTimeFilter = dateFilter === "Custom" ? [dayjs(customDate.from).startOf("day").toISOString(), dayjs(customDate.to).endOf("day").toISOString()] : timeSlots[dateFilter] 
         const response = await client.graphql({
             query: transactionsByUserIDAndDate,
-            variables: { userID: currentUser.userId, date: { between: checkTimeFilter}, filter: {type: {eq: otherTab}}, sortDirection: "DESC"}
+            variables: { userID: currentUser.userId, date: { between: checkTimeFilter}, filter: {type: {eq: otherTab}}, sortDirection: "DESC", limit: 100000}
           });
         const titles = ["Date", "Description", "Category", "Amount"];
         const currentTabArray = transactions.map((eachEarning) => {
