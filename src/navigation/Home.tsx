@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from 'react'
 import {  Pressable, TouchableOpacity, View, ViewStyle } from 'react-native'
 import { BottomTabBarButtonProps, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import { NavigationContainer } from '@react-navigation/native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated"
+import {useSafeAreaInsets} from "react-native-safe-area-context"
 
 import { Dashboard } from '../pages';
 import { absolutePosition, colorBlack, colorBlue, colorGray, colorGreen, colorWhite, flexChild, flexColCC } from '../styles';
@@ -17,6 +19,8 @@ const { Navigator, Screen} = createBottomTabNavigator();
 
 
 export const HomeNavigation = () => {
+
+    const {bottom} = useSafeAreaInsets()
 
     const tabsArray = [
         {
@@ -39,13 +43,19 @@ export const HomeNavigation = () => {
         },
       ]
 
-      const barStyle: ViewStyle = {
+      const dynamicStyles: ViewStyle = bottom === 0  ? {
         ...absolutePosition,
-        backgroundColor: colorWhite._1,
-        bottom: 15,
-        left: 15,
-        right: 15,
+        bottom: hp(2),
+        left: wp(8),
+        right: wp(8),
+
+      } : {}
+
+      const barStyle: ViewStyle = {
         borderRadius: 16,
+        margin: 0,
+        padding: 0,
+        ...dynamicStyles
       }
 
       const TabBarButton = (props: BottomTabBarButtonProps) => {
@@ -82,12 +92,12 @@ export const HomeNavigation = () => {
     
   return (
     <NavigationContainer>
-        <Navigator initialRouteName="Dashboard" screenOptions={{ headerShown: false, tabBarStyle: barStyle, tabBarHideOnKeyboard: true  }}>
+        <Navigator initialRouteName="Dashboard" screenOptions={{ headerShown: false, tabBarStyle: barStyle, tabBarHideOnKeyboard: true  }} >
         {tabsArray.map((eachScreen, index) => {
         const { name, component } = eachScreen;
 
         return (
-          <Screen key={index} name={name} component={component} options={{ tabBarShowLabel: true, tabBarButton: (props) => <TabBarButton {...props} item={eachScreen} /> }} />
+          <Screen key={index} name={name} component={component} options={{ tabBarShowLabel: true, tabBarButton: (props) => <TabBarButton  {...props} item={eachScreen} /> }} />
         )
       })}
         </Navigator>

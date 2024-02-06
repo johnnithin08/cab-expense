@@ -104,7 +104,7 @@ export const Dashboard = () => {
         const currentUser = await getCurrentUser();
         const response = await client.graphql({
             query: transactionsByUserIDAndDate,
-            variables: { userID: currentUser.userId, date: { between: timeSlots[dateFilter]}}
+            variables: { userID: currentUser.userId, date: { between: timeSlots[dateFilter]}, limit: 100000}
           });
         const expenseTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
         const earningTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");

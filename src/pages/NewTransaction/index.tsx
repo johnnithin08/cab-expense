@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, Pressable, NativeSyntheticEvent, TextInputChangeEventData, Button } from 'react-native'
+import { View, Text, Pressable, NativeSyntheticEvent, TextInputChangeEventData, Button, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -8,16 +8,17 @@ import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
 
-import { CustomSpacer, Icon, Icons, NewDatePicker } from '../../components'
+import { CustomFlexSpacer, CustomSpacer, Icon, Icons, NewDatePicker } from '../../components'
 import { alignItemsEnd, centerHV, centerHorizontal, centerVertical, circle, colorBlack, colorBlue, colorGray, colorRed, colorWhite, flexChild, flexRow, flexRowCC, fs12BoldBlack2, fs12BoldGray6, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2 } from '../../styles';
 import { CustomTextInput } from '../../components/Input';
 import { NewDropdown } from '../../components/Dropdown';
 import { CustomButton } from '../../components/Touchables/Button';
 import { RoundedButton } from '../../components/Touchables';
-import { createCategories, createTransactions, updateCategories, updateTransactions } from '../../graphql/mutations';
+import { createCategories, createTransactions, deleteTransactions, updateCategories, updateTransactions } from '../../graphql/mutations';
 import { categoriesByUserID, getTransactions } from '../../graphql/queries';
 import { Switch } from '../../components/Switch/Switch';
 import { formatAmount, isAmount, parseAmount } from '../../utils';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 
 
 interface ITransactonType  {
@@ -114,6 +115,22 @@ export const NewTransaction = () => {
     setTransactionData({...transactionData, newCategory: !transactionData.newCategory})
   }
 
+  const handleDelete = async () => {
+    try
+     {
+      const response = await client.graphql({
+        query: deleteTransactions,
+        variables: { input: { id: id } }
+      });
+      navigation.navigate("Transactions");
+     }
+    catch(err)
+     {
+        Alert.alert(err.message)
+     }
+  }
+
+
 
   const handleAddNewData = async () => {
     try 
@@ -165,7 +182,7 @@ export const NewTransaction = () => {
     try
      {
         const currentUser = await getCurrentUser();
-        const currentCategoryLabels = currentCategories.map((eachCategory) => eachCategory.label)
+        const currentCategoryLabels = currentCategories.filter((eachCategory) => eachCategory.label !== "").map((eachCategory) => eachCategory.label)
         if(categories !== undefined)
          {
           await client.graphql({
@@ -181,7 +198,7 @@ export const NewTransaction = () => {
             variables: { input: {userID: currentUser.userId, type: type, categories: [...currentCategoryLabels, newCategoryValue]}}
           })
          }
-        setTransactionData({...transactionData, newCategory: false})
+         setTransactionData({...transactionData, newCategory: false, newCategoryValue: ""})
         handleFetchCategories()
      }
     catch(err)
@@ -244,11 +261,21 @@ export const NewTransaction = () => {
       <ScrollView>
         <CustomSpacer space={hp(2)} />
         <View style={{...flexChild, marginHorizontal: wp(6)}}>
-          <Pressable onPress={handleBack} style={{...flexRow, ...centerVertical}}>
-            <Icon type={Icons.Ionicons} name="arrow-back" color={colorBlack._1}/>
-            <CustomSpacer isHorizontal={true} space={wp(2)} />
-            <Text style={fs20BoldBlack2}>Back</Text> 
-          </Pressable>
+        <View style={flexRow}>
+            <Pressable onPress={handleBack} style={{...flexRow, ...centerVertical}}>
+              <Icon type={Icons.Ionicons} name="arrow-back" color={colorBlack._1}/>
+              <CustomSpacer isHorizontal={true} space={wp(2)} />
+              <Text style={fs20BoldBlack2}>Back</Text> 
+            </Pressable>
+            {id ? (
+              <>
+            <CustomFlexSpacer />
+            <Pressable onPress={handleDelete}>
+              <AntDesign color={colorRed._1} name="delete" size={hp(3.5)} />
+            </Pressable>
+              </>  
+            ): null}
+          </View>
           <CustomSpacer space={hp(4)} />
           <CustomTextInput 
             id="name" 
