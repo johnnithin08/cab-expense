@@ -12,6 +12,7 @@ import { CustomSpacer, SingleSelectPills, TabGroup, TabProps } from '../../compo
 import { generateClient } from 'aws-amplify/api';
 import { transactionsByUserID, transactionsByUserIDAndDate } from '../../graphql/queries';
 import { useIsFocused } from '@react-navigation/native';
+import { parseAmount } from '../../utils';
 
 interface IGroupedTransactions {
   name: string;
@@ -103,7 +104,7 @@ export const Dashboard = () => {
         const currentUser = await getCurrentUser();
         const response = await client.graphql({
             query: transactionsByUserIDAndDate,
-            variables: { userID: currentUser.userId, date: { between: timeSlots[dateFilter]}}
+            variables: { userID: currentUser.userId, date: { between: timeSlots[dateFilter]}, limit: 100000}
           });
         const expenseTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
         const earningTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
@@ -191,8 +192,8 @@ export const Dashboard = () => {
 
   const earningsArray = transactions.length > 0 ? transactions.filter((eachEarning: ITransactions) => eachEarning.type === "Earning") : []
   const expenseArray = transactions.length > 0 ? transactions.filter((eachEarning: ITransactions) => eachEarning.type === "Expense") : []
-  const totalEarnings = earningsArray.length > 0 ? earningsArray.map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
-  const totalExpenses = expenseArray.length > 0 ? expenseArray.map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
+  const totalEarnings = earningsArray.length > 0 ? earningsArray.map((typedTransaction: ITransactions) => parseAmount(typedTransaction.amount)).reduce((total, current) => total + current) : 0;
+  const totalExpenses = expenseArray.length > 0 ? expenseArray.map((typedTransaction: ITransactions) => parseAmount(typedTransaction.amount)).reduce((total, current) => total + current) : 0;
   const netIncome = transactions.length > 0 ? totalEarnings - totalExpenses : 0;
 
 
@@ -251,9 +252,9 @@ return (
     </View>
     <CustomSpacer space={hp(5)} />
     <View style={centerHV}>
-          <Text style={fs20BoldBlack2}>Total Earnings: £{totalEarnings}</Text>
-          <Text style={fs20BoldBlack2}>Total Expenses: £{totalExpenses}</Text>
-          <Text style={fs20BoldBlack2}>Net: £{netIncome}</Text>
+          <Text style={fs20BoldBlack2}>Total Earnings: £{parseFloat(totalEarnings).toFixed(2)}</Text>
+          <Text style={fs20BoldBlack2}>Total Expenses: £{parseFloat(totalExpenses).toFixed(2)}</Text>
+          <Text style={fs20BoldBlack2}>Net: £{parseFloat(netIncome).toFixed(2)}</Text>
     </View>
     <CustomSpacer space={hp(20)} />
   </ScrollView>

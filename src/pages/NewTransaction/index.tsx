@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, Pressable, NativeSyntheticEvent, TextInputChangeEventData, Button } from 'react-native'
+import { View, Text, Pressable, NativeSyntheticEvent, TextInputChangeEventData, Button, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -8,15 +8,17 @@ import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import dayjs from 'dayjs';
 
-import { CustomSpacer, Icon, Icons, NewDatePicker } from '../../components'
+import { CustomFlexSpacer, CustomSpacer, Icon, Icons, NewDatePicker } from '../../components'
 import { alignItemsEnd, centerHV, centerHorizontal, centerVertical, circle, colorBlack, colorBlue, colorGray, colorRed, colorWhite, flexChild, flexRow, flexRowCC, fs12BoldBlack2, fs12BoldGray6, fs18BoldBlack2, fs20BoldBlack2, fs24BoldBlack2 } from '../../styles';
 import { CustomTextInput } from '../../components/Input';
 import { NewDropdown } from '../../components/Dropdown';
 import { CustomButton } from '../../components/Touchables/Button';
 import { RoundedButton } from '../../components/Touchables';
-import { createCategories, createTransactions, updateCategories, updateTransactions } from '../../graphql/mutations';
+import { createCategories, createTransactions, deleteTransactions, updateCategories, updateTransactions } from '../../graphql/mutations';
 import { categoriesByUserID, getTransactions } from '../../graphql/queries';
 import { Switch } from '../../components/Switch/Switch';
+import { formatAmount, isAmount, parseAmount } from '../../utils';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 
 
 interface ITransactonType  {
@@ -78,7 +80,6 @@ const expenseTypes: TypeLabelValue[] = [
 export const NewTransaction = () => {
   const [categories, setCategories] = useState<ICategoryData | undefined>(undefined)
   const [transactionData, setTransactionData] = useState<ITransactonType>({name: "", date: new Date, description: "", category: "", newCategory: false, newCategoryValue: "", amount: ""})
-  const [amountError, setAmountError] = useState<boolean>(false)
   const {amount,category,date, description,name, newCategory, newCategoryValue } = transactionData 
   const navigation = useNavigation();
   const route = useRoute()
@@ -96,11 +97,6 @@ export const NewTransaction = () => {
   }
 
   const handleChange = (value: string, key: string ) => {
-      if(key === "amount")
-       {
-          const checkAmount = value.match(/^[0-9]+$/)
-          setAmountError(!checkAmount)
-       }
       setTransactionData({
         ...transactionData,
         [key]: value
@@ -119,6 +115,22 @@ export const NewTransaction = () => {
     setTransactionData({...transactionData, newCategory: !transactionData.newCategory})
   }
 
+  const handleDelete = async () => {
+    try
+     {
+      const response = await client.graphql({
+        query: deleteTransactions,
+        variables: { input: { id: id } }
+      });
+      navigation.navigate("Transactions");
+     }
+    catch(err)
+     {
+        Alert.alert(err.message)
+     }
+  }
+
+
 
   const handleAddNewData = async () => {
     try 
@@ -126,7 +138,7 @@ export const NewTransaction = () => {
        const currentUser = await getCurrentUser();
        const response = await client.graphql({
          query: createTransactions,
-         variables: { input: { amount: amount, category: category, date: dayjs(date).toDate(), description: description, name: name, type: type,userID: currentUser.userId} }
+         variables: { input: { amount: formatAmount(amount), category: category, date: dayjs(date).toDate(), description: description, name: name, type: type,userID: currentUser.userId} }
        });
        navigation.navigate("Transactions");
      }
@@ -141,7 +153,7 @@ export const NewTransaction = () => {
      {
        const response = await client.graphql({
          query: updateTransactions,
-         variables: { input: { id: id, amount: amount, category: category, date: dayjs(date).toDate(), description: description, name: name, type: type} }
+         variables: { input: { id: id, amount: formatAmount(amount), category: category, date: dayjs(date).toDate(), description: description, name: name, type: type} }
        });
        navigation.navigate("Transactions");
      }
@@ -162,11 +174,15 @@ export const NewTransaction = () => {
      }
   }
 
+  const handleFormat = (_e) => {
+      setTransactionData({...transactionData, amount: formatAmount(transactionData.amount)})
+  }
+
   const handleAdd = async () => {
     try
      {
         const currentUser = await getCurrentUser();
-        const currentCategoryLabels = currentCategories.map((eachCategory) => eachCategory.label)
+        const currentCategoryLabels = currentCategories.filter((eachCategory) => eachCategory.label !== "").map((eachCategory) => eachCategory.label)
         if(categories !== undefined)
          {
           await client.graphql({
@@ -182,7 +198,7 @@ export const NewTransaction = () => {
             variables: { input: {userID: currentUser.userId, type: type, categories: [...currentCategoryLabels, newCategoryValue]}}
           })
          }
-        setTransactionData({...transactionData, newCategory: false})
+         setTransactionData({...transactionData, newCategory: false, newCategoryValue: ""})
         handleFetchCategories()
      }
     catch(err)
@@ -237,7 +253,7 @@ export const NewTransaction = () => {
     handleFetchCategories();
   },[])
 
-  const disableSave = name === "" || description === "" || amount === "" || amountError === true || category === ""
+  const disableSave =  amount === ""  || category === "";
 
   
   return (
@@ -245,13 +261,21 @@ export const NewTransaction = () => {
       <ScrollView>
         <CustomSpacer space={hp(2)} />
         <View style={{...flexChild, marginHorizontal: wp(6)}}>
-          <Pressable onPress={handleBack} style={{...flexRow, ...centerVertical}}>
-            <Icon type={Icons.Ionicons} name="arrow-back" color={colorBlack._1}/>
-            <CustomSpacer isHorizontal={true} space={wp(2)} />
-            <Text style={fs20BoldBlack2}>Back</Text> 
-          </Pressable>
-          <CustomSpacer space={hp(4)} />
-          <CustomTextInput id="name" label='Name' value={name} onChangeText={(value) => handleChange(value, "name")} viewStyle={{width: wp(50)}}/>
+        <View style={flexRow}>
+            <Pressable onPress={handleBack} style={{...flexRow, ...centerVertical}}>
+              <Icon type={Icons.Ionicons} name="arrow-back" color={colorBlack._1}/>
+              <CustomSpacer isHorizontal={true} space={wp(2)} />
+              <Text style={fs20BoldBlack2}>Back</Text> 
+            </Pressable>
+            {id ? (
+              <>
+            <CustomFlexSpacer />
+            <Pressable onPress={handleDelete}>
+              <AntDesign color={colorRed._1} name="delete" size={hp(3.5)} />
+            </Pressable>
+              </>  
+            ): null}
+          </View>
           <CustomSpacer space={hp(4)} />
           <CustomTextInput 
             id="name" 
@@ -261,10 +285,7 @@ export const NewTransaction = () => {
             viewStyle={{width: wp(50)}}
           />
           <CustomSpacer space={hp(4)} />
-          <CustomTextInput id="name" label='Amount' value={amount} onChangeText={(value) => handleChange(value, "amount")} viewStyle={{width: wp(50)}}/>
-          {amountError === true ? (
-            <Text style={{...fs12BoldBlack2, color: colorRed._1, marginLeft: wp(1), marginTop: hp(1)}}>Please enter a proper amount</Text>
-            ): null}
+          <CustomTextInput id="name" label='Amount' value={amount} onBlur={handleFormat} onChangeText={(value) => handleChange(value, "amount")} viewStyle={{width: wp(50)}}/>
           <CustomSpacer space={hp(4)} />
           <Text style={fs12BoldGray6}>Transaction Date</Text>
           <CustomSpacer space={hp(1)} />

@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, SafeAreaView, FlatList, ViewStyle, ImageStyle, Image, Pressable, ActivityIndicator } from 'react-native'
+import { View, Text, FlatList, ViewStyle, ImageStyle, Image, Pressable, ActivityIndicator, PermissionsAndroid, Platform, Alert } from 'react-native'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
+import * as XLSX from 'xlsx';
+import RNFS from 'react-native-fs';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { absolutePosition, border, centerHV, colorBlack, colorBlue, colorGray, colorTransparent, colorWhite, flexChild, flexRow, fs12BoldGray6, fs12RegBlack2, fs14BoldBlack2, fs14RegBlack2, fs16BoldBlack2, fs18BoldBlack2, fs20BoldBlack2, fullWidth, justifyContentEnd, px, py, spaceBetweenHorizontal, sw1 } from '../../styles'
 import { CustomFlexSpacer, CustomSpacer, Icon, Icons, NewDatePicker, SingleSelectPills, TabGroup, TabProps } from '../../components';
 import { LabeledTitle } from '../../components/Views/LabeledTitle';
 import { transactionsByUserIDAndDate } from '../../graphql/queries';
 import { onCreateTransactions, onUpdateTransactions } from '../../graphql/subscriptions';
-import { AnimationUtils } from '../../utils';
+import { AnimationUtils, parseAmount } from '../../utils';
 import { RoundedButton } from '../../components/Touchables';
 import { LocalAssets } from '../../assets/images/LocalAssets';
+import Entypo from 'react-native-vector-icons/Entypo';
 
 interface ICustomDate  {
     from?: Date;
@@ -38,6 +42,7 @@ export const Transactions = () => {
     const [activeTab, setActiveTab] = useState<number>(0)
     const client = generateClient();
     const isFocused = useIsFocused();
+    const {bottom} = useSafeAreaInsets()
 
     const transactionTypeImages: TTransactionTypesObject = {
         "Car Insurance" : LocalAssets.carInsurance,
@@ -52,9 +57,8 @@ export const Transactions = () => {
 
     const timeSlots = {
         "Daily": [dayjs().startOf("day").toISOString(),dayjs().endOf("day").toISOString()],
-        "This week": [dayjs().startOf("week").toISOString(), dayjs().endOf("week").toISOString()],
+        "This week": [dayjs().startOf("week").add(1, "day").toISOString(), dayjs().endOf("week").toISOString()],
       }
-
     const tabs: TabProps[] = [{
       selected: activeTab === 0,
       text: "Expenses",
@@ -69,6 +73,7 @@ export const Transactions = () => {
       textStyle: fs18BoldBlack2,
       
     }]
+    const netIncome = transactions.length > 0 ? total.totalIncome - total.totalExpense : 0;
   
     const handleTabs = (index: number) => {
       setActiveTab(index)
@@ -107,6 +112,94 @@ export const Transactions = () => {
 
     }
 
+    const exportExcel = async () => {
+        const otherTab = activeTab === 0 ? "Earning" : "Expense";
+        const currentUser = await getCurrentUser();
+            const checkTimeFilter = dateFilter === "Custom" ? [dayjs(customDate.from).startOf("day").toISOString(), dayjs(customDate.to).endOf("day").toISOString()] : timeSlots[dateFilter] 
+        const response = await client.graphql({
+            query: transactionsByUserIDAndDate,
+            variables: { userID: currentUser.userId, date: { between: checkTimeFilter}, filter: {type: {eq: otherTab}}, sortDirection: "DESC", limit: 100000}
+          });
+        const titles = ["Date", "Description", "Category", "Amount"];
+        const currentTabArray = transactions.map((eachEarning) => {
+            const {date, description, category, amount} = eachEarning
+            return [dayjs(date).format('DD/MM/YYYY'), description, category, `£${amount}`]
+        })
+
+        const incomeSheetArray = activeTab === 0 ? response.data.transactionsByUserIDAndDate.items.map((eachExpense) => {
+            const {date, description, category, amount} = eachExpense
+            return [dayjs(date).format('DD/MM/YYYY'), description, category, `£${amount}`]
+        }) : currentTabArray;
+        const expenseSheetArray = activeTab === 1 ? response.data.transactionsByUserIDAndDate.items.map((eachEarning) => {
+            const {date, description, category, amount} = eachEarning
+            return [dayjs(date).format('DD/MM/YYYY'), description, category, amount]
+        }) : currentTabArray;
+
+        const wb = XLSX.utils.book_new();
+        const ws1 = XLSX.utils.aoa_to_sheet([
+            titles,
+            ...incomeSheetArray,
+            ["", "", "", ""],
+            ["Total Expenses:", `£${parseFloat(total.totalExpense).toFixed(2)}`],
+            ["Total Earning:", `£${parseFloat(total.totalIncome).toFixed(2)}` ],
+            ["Net Income:", `£${parseFloat(netIncome).toFixed(2)}` ],
+        ])
+        const ws2 = XLSX.utils.aoa_to_sheet([
+            titles,
+            ...expenseSheetArray,
+        ])
+
+        XLSX.utils.book_append_sheet(wb,ws1, "Income")
+        XLSX.utils.book_append_sheet(wb,ws2, "Expense")
+        const excelBase64 = XLSX.write(wb, {type:"base64"});
+        const path = Platform.OS === "android" ? RNFS.DownloadDirectoryPath : RNFS.DocumentDirectoryPath;
+        // // Write generated excel to Storage
+        RNFS.writeFile(path + `/Taxi-Budget${dayjs().format("DD-MM-YYYY hh mm ss")}.xlsx`, excelBase64, 'base64').then((r)=>{
+            Alert.alert("File successfully downloaded")
+        }).catch((e)=>{
+            Alert.alert('Download Failed');
+        });
+    }
+
+    const handleExport = async () => {
+        if(Platform.OS === "android")
+         {
+
+             try{
+                if (Number(Platform.Version) >= 33) {
+                     return exportExcel();
+                  }
+                
+                  const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
+                
+                  const hasPermission = await PermissionsAndroid.check(permission);
+                  if (hasPermission) {
+                    return exportExcel();
+                  }
+                
+                  const status = await PermissionsAndroid.request(permission);
+                  if(status === "granted")
+                   {
+                    exportExcel();
+                   }
+                 // Check for Permission (check if permission is already given or not)
+                 else {
+                     // Permission denied
+                     console.log("Permission denied");
+                   }
+               }catch(e){
+                 console.log(e);
+                 return
+               }
+         }
+        else
+         {
+            exportExcel();
+         }
+    }
+
+    
+
     const fetchTransactions = async (custom?: boolean) => {
         setLoading(true)
         try 
@@ -115,12 +208,12 @@ export const Transactions = () => {
             const checkTimeFilter = custom === true || dateFilter === "Custom" ? [dayjs(customDate.from).startOf("day").toISOString(), dayjs(customDate.to).endOf("day").toISOString()] : timeSlots[dateFilter] 
             const response = await client.graphql({
                 query: transactionsByUserIDAndDate,
-                variables: { userID: currentUser.userId, date: { between: checkTimeFilter}, sortDirection: "DESC"}
+                variables: { userID: currentUser.userId, date: { between: checkTimeFilter}, sortDirection: "DESC", limit: 100000}
               });
             const expenseTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Expense");
             const earningTransactions = response.data.transactionsByUserIDAndDate.items.filter((eachTransaction: ITransactions) => eachTransaction.type === "Earning");
-            const totalEarnings = earningTransactions.length > 0 ? earningTransactions.filter((eachEarning: ITransactions) => eachEarning.type === "Earning").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
-            const totalExpenses = expenseTransactions.length > 0 ? expenseTransactions.filter((eachEarning: ITransactions) => eachEarning.type === "Expense").map((typedTransaction: ITransactions) => parseInt(typedTransaction.amount,10)).reduce((total, current) => total + current) : 0
+            const totalEarnings = earningTransactions.length > 0 ? earningTransactions.filter((eachEarning: ITransactions) => eachEarning.type === "Earning").map((typedTransaction: ITransactions) => parseAmount(typedTransaction.amount)).reduce((total, current) => total + current) : 0;
+            const totalExpenses = expenseTransactions.length > 0 ? expenseTransactions.filter((eachEarning: ITransactions) => eachEarning.type === "Expense").map((typedTransaction: ITransactions) => parseAmount(typedTransaction.amount)).reduce((total, current) => total + current) : 0
             const currentTransactions = activeTab === 0 ? expenseTransactions : earningTransactions
             setTransactions(currentTransactions)
             setTotal({ totalExpense: totalExpenses, totalIncome: totalEarnings})
@@ -170,7 +263,16 @@ export const Transactions = () => {
         paddingVertical: showFilter === true ? hp(2) : 0
     }
 
-    const netIncome = transactions.length > 0 ? total.totalIncome - total.totalExpense : 0;
+    const exportContainer: ViewStyle = {
+        ...absolutePosition,
+        zIndex: 5,
+        right: wp(5),
+        ...border(colorGray._1, 1, wp(10)),
+        backgroundColor: colorGray._3,
+        padding: wp(2)
+    }
+
+    
   return (
     <SafeAreaView style={flexChild}>
         <View style={flexChild}>
@@ -224,46 +326,52 @@ export const Transactions = () => {
                         <ActivityIndicator size='large' />
                     </View>    
                 ) : (
+                <>
+                    <View style={exportContainer}>
+                        <Pressable onPress={handleExport}>
+                            <Entypo color={colorBlack._1} name="export" size={hp(4)} />
+                        </Pressable>
+                    </View>
+                    <FlatList 
+                        data={transactions}
+                        renderItem={({item, index}) => {
 
-                <FlatList 
-                    data={transactions}
-                    renderItem={({item, index}) => {
+                            const handleEdit = () => {
+                                navigation.navigate("NewTransaction", { type: activeTab === 0 ? "Expense" : "Earning", mode: "edit", id: item.id})
+                            }
 
-                        const handleEdit = () => {
-                            navigation.navigate("NewTransaction", { type: activeTab === 0 ? "Expense" : "Earning", mode: "edit", id: item.id})
-                        }
-
-                        const defaultImage = activeTab === 0 ? LocalAssets.general : LocalAssets.money;
-                        const checkImage = transactionTypeImages[item.category] !== undefined ? transactionTypeImages[item.category] : defaultImage
-                        return (
-                            <>
-                            {index !== 0 ? <CustomSpacer space={hp(2)} /> : null}
-                            <Pressable onPress={handleEdit} style={itemContainer}>
-                                <Image source={checkImage} style={imageStyle}/>
-                                <CustomSpacer isHorizontal={true} space={wp(2)} />
-                                <View>
-                                    <LabeledTitle label={item.name} labelStyle={fs18BoldBlack2} title={item.category} titleStyle={fs14RegBlack2}/>
-                                    <CustomSpacer space={wp(2)} />
-                                    <Text style={fs14RegBlack2}>{item.description}</Text>
-                                </View>
-                                <CustomFlexSpacer />
-                                <View style={endContainer}>
-                                    <Text style={fs18BoldBlack2}>£{item.amount}</Text>
-                                    <Text style={fs14RegBlack2}>{dayjs(item.createdAt).format('hh:mm DD/MM/YYYY')}</Text>
-                                </View>    
-                            </Pressable>  
-                            {index === transactions.length - 1 ? <CustomSpacer space={hp(10)} /> : null}  
-                            </>
-                        )
-                    }}
-                    style={{height: hp(61)}}
-                />
+                            const defaultImage = activeTab === 0 ? LocalAssets.general : LocalAssets.money;
+                            const checkImage = transactionTypeImages[item.category] !== undefined ? transactionTypeImages[item.category] : defaultImage
+                            return (
+                                <>
+                                {index !== 0 ? <CustomSpacer space={hp(2)} /> : null}
+                                <Pressable onPress={handleEdit} style={itemContainer}>
+                                    <Image source={checkImage} style={imageStyle}/>
+                                    <CustomSpacer isHorizontal={true} space={wp(2)} />
+                                    <View>
+                                        <Text style={fs18BoldBlack2}>{item.description}</Text>
+                                        <CustomSpacer space={wp(2)} />
+                                        <Text style={fs14RegBlack2}>{item.category}</Text>
+                                    </View>
+                                    <CustomFlexSpacer />
+                                    <View style={endContainer}>
+                                        <Text style={fs18BoldBlack2}>£{item.amount}</Text>
+                                        <Text style={fs14RegBlack2}>{dayjs(item.date).format('hh:mm DD/MM/YYYY')}</Text>
+                                    </View>    
+                                </Pressable>  
+                                {index === transactions.length - 1 ? <CustomSpacer space={hp(10)} /> : null}  
+                                </>
+                            )
+                        }}
+                        style={{height: bottom === 0 ? hp(61) : hp(58)}}
+                    />
+                </>
                 )}
             </View>
             <View style={centerHV}>
-                <Text style={fs20BoldBlack2}>Total Earnings: £{total.totalIncome}</Text>
-                <Text style={fs20BoldBlack2}>Total Expenses: £{total.totalExpense}</Text>
-                <Text style={fs20BoldBlack2}>Net: £{netIncome}</Text>
+                <Text style={fs20BoldBlack2}>Total Earnings: £{parseFloat(total.totalIncome).toFixed(2)}</Text>
+                <Text style={fs20BoldBlack2}>Total Expenses: £{parseFloat(total.totalExpense).toFixed(2)}</Text>
+                <Text style={fs20BoldBlack2}>Net: £{parseFloat(netIncome).toFixed(2)}</Text>
             </View>
             <CustomSpacer space={hp(4)} />
             <Pressable onPress={handleAdd} style={addButtonStyle}>
