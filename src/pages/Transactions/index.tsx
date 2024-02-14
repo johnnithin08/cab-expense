@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import RNFS from 'react-native-fs';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import 'dayjs/plugin/weekday';
 
 import { absolutePosition, border, centerHV, colorBlack, colorBlue, colorGray, colorTransparent, colorWhite, flexChild, flexRow, fs12BoldGray6, fs12RegBlack2, fs14BoldBlack2, fs14RegBlack2, fs16BoldBlack2, fs18BoldBlack2, fs20BoldBlack2, fullWidth, justifyContentEnd, px, py, spaceBetweenHorizontal, sw1 } from '../../styles'
 import { CustomFlexSpacer, CustomSpacer, Icon, Icons, NewDatePicker, SingleSelectPills, TabGroup, TabProps } from '../../components';
@@ -18,6 +19,8 @@ import { AnimationUtils, parseAmount } from '../../utils';
 import { RoundedButton } from '../../components/Touchables';
 import { LocalAssets } from '../../assets/images/LocalAssets';
 import Entypo from 'react-native-vector-icons/Entypo';
+
+dayjs.extend(require('dayjs/plugin/weekday'));
 
 interface ICustomDate  {
     from?: Date;
@@ -55,9 +58,11 @@ export const Transactions = () => {
         "Tips" : LocalAssets.tips,
     }
 
+    const checkStartDay = dayjs().day() === 0 ? dayjs().subtract(1,"day").startOf("week").add(1,"day") : dayjs().startOf("week").add(1,"day");
+    const checkEndDay = dayjs().day() === 0 ? dayjs().startOf("week") : dayjs().endOf("week").add(1,"day");
     const timeSlots = {
         "Daily": [dayjs().startOf("day").toISOString(),dayjs().endOf("day").toISOString()],
-        "This week": [dayjs().startOf("week").add(1, "day").toISOString(), dayjs().endOf("week").toISOString()],
+        "This week": [checkStartDay.toISOString(), checkEndDay.toISOString()],
       }
     const tabs: TabProps[] = [{
       selected: activeTab === 0,
@@ -205,7 +210,8 @@ export const Transactions = () => {
         try 
          {
             const currentUser = await getCurrentUser();
-            const checkTimeFilter = custom === true || dateFilter === "Custom" ? [dayjs(customDate.from).startOf("day").toISOString(), dayjs(customDate.to).endOf("day").toISOString()] : timeSlots[dateFilter] 
+            const checkTimeFilter = custom === true || dateFilter === "Custom" ? [dayjs(customDate.from).startOf("day").toISOString(), dayjs(customDate.to).endOf("day").toISOString()] : timeSlots[dateFilter];
+            console.log("check", checkTimeFilter)
             const response = await client.graphql({
                 query: transactionsByUserIDAndDate,
                 variables: { userID: currentUser.userId, date: { between: checkTimeFilter}, sortDirection: "DESC", limit: 100000}
