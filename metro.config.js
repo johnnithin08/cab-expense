@@ -1,5 +1,16 @@
-const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
-const exclusionList = require('metro-config/src/defaults/exclusionList');
+function safeRequire(name) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require(name);
+  } catch (_e) {
+    return null;
+  }
+}
+
+const rnMetro = safeRequire('@react-native/metro-config');
+const exclusionList =
+  safeRequire('metro-config/src/defaults/exclusionList') ||
+  safeRequire('metro-config/src/defaults/exclusionList.js');
 
 /**
  * Metro configuration
@@ -7,10 +18,18 @@ const exclusionList = require('metro-config/src/defaults/exclusionList');
  *
  * @type {import('metro-config').MetroConfig}
  */
-const config = {
-    resolver: {
-    blacklistRE: exclusionList([/#current-cloud-backend\/.*/]),
-},
-};
+const config = exclusionList
+  ? {
+      resolver: {
+        blacklistRE: exclusionList([/#current-cloud-backend\/.*/]),
+      },
+    }
+  : {};
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+// If `@react-native/metro-config` isn't installed (common when you’re only running the Expo app),
+// don’t crash while loading this config.
+if (rnMetro?.getDefaultConfig && rnMetro?.mergeConfig) {
+  module.exports = rnMetro.mergeConfig(rnMetro.getDefaultConfig(__dirname), config);
+} else {
+  module.exports = config;
+}

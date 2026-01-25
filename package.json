@@ -5,10 +5,10 @@
   "scripts": {
     "detox:ios:build": "detox build --configuration ios.sim.debug",
     "detox:ios:run": "detox test --configuration ios.sim.debug",
-    "android": "react-native run-android",
-    "ios": "react-native run-ios",
+    "android": "cd cab-expense && npm run android",
+    "ios": "cd cab-expense && npm run ios",
     "lint": "eslint .",
-    "start": "react-native start",
+    "start": "cd cab-expense && npm run start",
     "test": "jest",
     "clean:pods": "cd ios && rm -rf pods && pod install",
     "clean:ios": "npm run clean:pods && cd ios && rm -rf build",

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, FlatList, ViewStyle, ImageStyle, Image, Pressable, ActivityIndicator, PermissionsAndroid, Platform, Alert } from 'react-native'
+import { View, Text, FlatList, ViewStyle, ImageStyle, Image, Pressable, ActivityIndicator, Platform, Alert } from 'react-native'
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
-import RNFS from 'react-native-fs';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { absolutePosition, border, centerHV, colorBlack, colorBlue, colorGray, colorTransparent, colorWhite, flexChild, flexRow, fs12BoldGray6, fs12RegBlack2, fs14BoldBlack2, fs14RegBlack2, fs16BoldBlack2, fs18BoldBlack2, fs20BoldBlack2, fullWidth, justifyContentEnd, px, py, spaceBetweenHorizontal, sw1 } from '../../styles'
@@ -17,7 +18,7 @@ import { onCreateTransactions, onUpdateTransactions } from '../../graphql/subscr
 import { AnimationUtils, parseAmount } from '../../utils';
 import { RoundedButton } from '../../components/Touchables';
 import { LocalAssets } from '../../assets/images/LocalAssets';
-import Entypo from 'react-native-vector-icons/Entypo';
+import { Entypo } from '@expo/vector-icons';
 
 interface ICustomDate  {
     from?: Date;
@@ -152,50 +153,32 @@ export const Transactions = () => {
         XLSX.utils.book_append_sheet(wb,ws1, "Income")
         XLSX.utils.book_append_sheet(wb,ws2, "Expense")
         const excelBase64 = XLSX.write(wb, {type:"base64"});
-        const path = Platform.OS === "android" ? RNFS.DownloadDirectoryPath : RNFS.DocumentDirectoryPath;
-        // // Write generated excel to Storage
-        RNFS.writeFile(path + `/Taxi-Budget${dayjs().format("DD-MM-YYYY hh mm ss")}.xlsx`, excelBase64, 'base64').then((r)=>{
-            Alert.alert("File successfully downloaded")
-        }).catch((e)=>{
-            Alert.alert('Download Failed');
+        const fileName = `Taxi-Budget${dayjs().format("DD-MM-YYYY HH-mm-ss")}.xlsx`;
+        const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+
+        await FileSystem.writeAsStringAsync(fileUri, excelBase64, {
+          encoding: FileSystem.EncodingType.Base64,
         });
+
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri, {
+            dialogTitle: 'Export transactions',
+            mimeType:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            UTI: 'org.openxmlformats.spreadsheetml.sheet',
+          });
+        } else {
+          Alert.alert('Export complete', `Saved to: ${fileUri}`);
+        }
     }
 
     const handleExport = async () => {
-        if(Platform.OS === "android")
-         {
-
-             try{
-                if (Number(Platform.Version) >= 33) {
-                     return exportExcel();
-                  }
-                
-                  const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
-                
-                  const hasPermission = await PermissionsAndroid.check(permission);
-                  if (hasPermission) {
-                    return exportExcel();
-                  }
-                
-                  const status = await PermissionsAndroid.request(permission);
-                  if(status === "granted")
-                   {
-                    exportExcel();
-                   }
-                 // Check for Permission (check if permission is already given or not)
-                 else {
-                     // Permission denied
-                     console.log("Permission denied");
-                   }
-               }catch(e){
-                 console.log(e);
-                 return
-               }
-         }
-        else
-         {
-            exportExcel();
-         }
+        try {
+          await exportExcel();
+        } catch (e) {
+          console.log(e);
+          Alert.alert('Export failed');
+        }
     }
 
     

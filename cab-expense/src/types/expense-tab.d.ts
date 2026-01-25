@@ -1,0 +1,1 @@
+type TExpenseTab = "Expense" | "Income"

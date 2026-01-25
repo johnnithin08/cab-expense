@@ -1,0 +1,1 @@
+type TDateFilter = "Daily" | "This month" | "Last 6 months" | "This Year" | "This week" | "Custom" 

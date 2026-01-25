@@ -18,7 +18,7 @@ import { createCategories, createTransactions, deleteTransactions, updateCategor
 import { categoriesByUserID, getTransactions } from '../../graphql/queries';
 import { Switch } from '../../components/Switch/Switch';
 import { formatAmount, isAmount, parseAmount } from '../../utils';
-import AntDesign from 'react-native-vector-icons/AntDesign';
+import { AntDesign } from '@expo/vector-icons';
 
 
 interface ITransactonType  {
